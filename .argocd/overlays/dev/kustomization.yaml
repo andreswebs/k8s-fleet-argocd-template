@@ -1,0 +1,15 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+
+# https://github.com/kubernetes-sigs/kustomize/issues/4658#issuecomment-1951406289
+helmCharts:
+  - name: argo-cd
+    repo: https://argoproj.github.io/argo-helm
+    version: 7.1.1
+    namespace: argocd
+    releaseName: argocd
+    valuesFile: ../../base/argocd.helm.values.yaml
+    additionalValuesFiles:
+      - argocd.helm.values.yaml

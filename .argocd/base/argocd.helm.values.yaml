@@ -1,0 +1,47 @@
+---
+createClusterRoles: true
+
+crds:
+  install: true
+  keep: false
+
+global:
+  additionalLabels:
+    app: argo-cd
+  revisionHistoryLimit: 3
+
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: ""
+    imagePullPolicy: IfNotPresent
+
+  logging:
+    format: json
+    level: info
+
+configs:
+  cm:
+    create: true
+    exec.enabled: false
+    admin.enabled: true
+    timeout.reconciliation: 180s
+    timeout.hard.reconciliation: 0s
+    statusbadge.enabled: false
+    kustomize.buildOptions: --enable-helm --load-restrictor LoadRestrictionsNone
+
+  params:
+    create: true
+
+  secret:
+    createSecret: false
+
+server:
+  name: server
+  replicas: 2
+
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 50

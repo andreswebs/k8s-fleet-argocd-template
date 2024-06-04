@@ -1,0 +1,15 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: self
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ArgoCD self-management project
+  sourceRepos:
+    - "*"
+  destinations:
+    - namespace: argocd
+      server: https://kubernetes.default.svc

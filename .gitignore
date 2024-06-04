@@ -1,0 +1,4 @@
+tmp/
+keys/
+.envrc
+.DS_Store

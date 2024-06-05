@@ -5,7 +5,7 @@ namespace: argocd
 resources:
   - ../../projects/self
   - ../../projects/infra
-  - ../../apps/argocd
+  - ../../.argocd/bootstrap
   # - ./infra.yaml
   # - ./apps.yaml
 

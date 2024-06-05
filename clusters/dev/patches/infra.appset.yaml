@@ -15,7 +15,7 @@
               elements:
                 - name: metrics-server
                   namespace: metrics-server
-                  path: ../../apps/metrics-server/overlays/{{.clusterName}}
+                  path: apps/metrics-server/overlays/{{.clusterName}}
                 - name: cert-manager
                   namespace: cert-manager
-                  path: ../../apps/cert-manager/overlays/{{.clusterName}}
+                  path: apps/cert-manager/overlays/{{.clusterName}}

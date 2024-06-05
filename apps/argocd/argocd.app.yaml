@@ -21,3 +21,5 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - Replace=true
+      - ApplyOutOfSyncOnly=true
+      - PruneLast=true

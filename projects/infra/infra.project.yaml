@@ -7,9 +7,15 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  description: ArgoCD self-management project
+  description: Infrastructure components
   sourceRepos:
     - "*"
   destinations:
     - namespace: "*"
       server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

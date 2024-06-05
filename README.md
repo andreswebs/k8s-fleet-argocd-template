@@ -109,6 +109,14 @@ installed.
 After the `root` Application is installed on the cluster's Argo server, Argo
 will install the full cluster configuration on that cluster.
 
+### Example: Cluster bootstrap running the commands imperatively from a shell:
+
+```sh
+KUSTOMIZATION_DIR="clusters/dev"
+kubectl apply --kustomize "${KUSTOMIZATION_DIR}"
+kubectl apply --filename "${KUSTOMIZATION_DIR}/root.app.yaml"
+```
+
 ## Authors
 
 **Andre Silva** - [@andreswebs](https://github.com/andreswebs)

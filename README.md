@@ -1,19 +1,19 @@
 # k8s-fleet
 
-This repository contains configuration for a set of k8s clusters.
+This repository contains configuration for a set of k8s clusters using Argo CD.
 
 ## Argo CD Bootstrap
 
 The `.argocd` directory contains a Kustomization to install Argo CD using the
 community Helm chart.
 
-Subsequently, this kustomization is taken over by an Argo CD Application, and
-Argo becomes self-managing. The configurations (Helm values for the deployed
-Argo CD chart) in this directory remain active, and can be modified by changing
-the `argocd.helm.values.yaml` files under the `.argocd/overlays/<cluster>`
-directories.
+Subsequently, after the Cluster Bootstrap, this kustomization is taken over by
+an Argo CD Application, and Argo becomes self-managing. The configurations (Helm
+values for the deployed Argo CD chart) in the `.argocd` directory remain active,
+and can be modified by changing the `argocd.helm.values.yaml` files under the
+`.argocd/overlays/<cluster>` directories.
 
-Argo CD upgrades can be initiated by changing the chart version in
+Upgrades to Argo CD can be initiated by changing the chart version in
 `.argocd/overlays/<cluster>/kustomization.yaml`.
 
 ### Pre-requisites
@@ -97,14 +97,22 @@ managed applications get bootstrapped in a further step. Username is `admin`.)
 ## Cluster Bootstrap
 
 Clusters are bootstrapped from a single Argo CD Application named `root`,
-declared at `clusters/<cluster-name>/root.app.yaml`. The
+declared at `clusters/<cluster-name>/root.app.yaml` for each cluster. The
 `clusters/<cluster-name>` directory contains a Kustomization which becomes
-managed by the `root` Application.
+managed by the `root` Application ("App of Apps" pattern).
 
 This step is run a single time for each cluster in it's entire lifetime, and can
 be executed from the IaC pipeline to bootstrap a cluster. It consists in
-applying the `root.app.yaml` (Application) manifest to the cluster with Argo CD
+applying the `root.app.yaml` (Application) manifest to a cluster with Argo CD
 installed.
 
 After the `root` Application is installed on the cluster's Argo server, Argo
 will install the full cluster configuration on that cluster.
+
+## Authors
+
+**Andre Silva** - [@andreswebs](https://github.com/andreswebs)
+
+## License
+
+This project is licensed under the [Unlicense](UNLICENSE.md).

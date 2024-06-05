@@ -2,22 +2,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: apps
+  name: root
   namespace: argocd
 spec:
-  project: default
+  project: root
   source:
     targetRevision: main
+    repoURL: ssh://git@ssh.dev.azure.com/v3/andreswebs/sandbox/k8s-fleet
+    path: clusters/dev
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
   syncPolicy:
     retry:
-      limit: 2
+      limit: 3
     automated:
       prune: true
       selfHeal: true
       allowEmpty: false
     syncOptions:
-      - CreateNamespace=true
+      - CreateNamespace=false
       - Replace=true

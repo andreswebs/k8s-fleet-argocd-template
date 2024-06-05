@@ -1,0 +1,21 @@
+---
+- op: add
+  path: /spec/template/spec/source/repoURL
+  value: ssh://git@ssh.dev.azure.com/v3/andreswebs/sandbox/k8s-fleet
+
+- op: add
+  path: /spec/generators
+  value:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - clusterName: dev
+          - list:
+              elements:
+                - name: metrics-server
+                  namespace: metrics-server
+                  path: ../../apps/metrics-server/overlays/{{.clusterName}}
+                - name: cert-manager
+                  namespace: cert-manager
+                  path: ../../apps/cert-manager/overlays/{{.clusterName}}

@@ -2,11 +2,11 @@
 extends: default
 
 ignore:
-  - clusters/**/flux-system
+  - .argocd/overlays/**/charts
 
 rules:
   document-start: enable
-  truthy: disable
+  truthy: enable
   line-length:
     max: 120
     level: warning

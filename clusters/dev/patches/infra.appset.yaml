@@ -19,3 +19,6 @@
                 - name: cert-manager
                   namespace: cert-manager
                   path: apps/cert-manager/overlays/{{.clusterName}}
+                - name: o11y
+                  namespace: o11y
+                  path: apps/o11y/overlays/{{.clusterName}}

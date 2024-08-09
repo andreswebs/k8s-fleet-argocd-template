@@ -13,3 +13,12 @@ helmCharts:
     valuesFile: ../../base/argocd.helm.values.yaml
     additionalValuesFiles:
       - argocd.helm.values.yaml
+
+  - name: argo-rollouts
+    repo: https://argoproj.github.io/argo-helm
+    version: 2.37.3
+    namespace: argocd
+    releaseName: argo-rollouts
+    valuesFile: ../../base/argo-rollouts.helm.values.yaml
+    additionalValuesFiles:
+      - argo-rollouts.helm.values.yaml

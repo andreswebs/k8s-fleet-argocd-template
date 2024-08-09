@@ -1,0 +1,5 @@
+---
+- op: add
+  path: /metadata/annotations
+  value:
+    eks.amazonaws.com/role-arn: arn:aws:iam::714139086337:role/opentelemetry-collector-p41-poc-dev

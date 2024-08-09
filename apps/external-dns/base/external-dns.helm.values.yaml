@@ -1,0 +1,7 @@
+---
+fullnameOverride: external-dns
+
+serviceAccount:
+  create: true
+  automountServiceAccountToken: true
+  name: external-dns

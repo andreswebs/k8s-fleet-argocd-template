@@ -1,0 +1,17 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: external-secrets
+
+resources:
+  - ../../base
+
+helmCharts:
+  - name: external-secrets
+    repo: https://charts.external-secrets.io
+    version: "0.9.20"
+    namespace: external-secrets
+    releaseName: external-secrets
+    valuesFile: ../../base/external-secrets.helm.values.yaml
+    additionalValuesFiles:
+      - external-secrets.helm.values.yaml

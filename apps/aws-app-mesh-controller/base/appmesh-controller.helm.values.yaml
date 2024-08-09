@@ -1,0 +1,15 @@
+---
+fullnameOverride: appmesh-controller
+
+serviceAccount:
+  create: true
+  name: appmesh-controller
+
+replicaCount: 2
+
+# enableCertManager: true
+
+tracing:
+  address: otel-gateway-collector.o11y.svc.cluster.local
+  provider: jaeger
+  port: 9411

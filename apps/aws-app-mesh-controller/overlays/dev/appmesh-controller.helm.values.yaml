@@ -1,0 +1,7 @@
+---
+region: us-east-1
+accountId: # TODO
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: # TODO

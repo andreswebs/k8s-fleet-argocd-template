@@ -3,3 +3,5 @@ keys/
 .envrc
 .DS_Store
 *.bak
+*.bak.*
+**/charts/

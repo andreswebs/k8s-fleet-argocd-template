@@ -67,11 +67,13 @@ This will install the Argo CD Helm chart on the `dev` cluster:
 ```sh
 KUSTOMIZATION_DIR="./.argocd/overlays/dev"
 
-# this emulates, at the shell, Argo's behavior about Helm charts - by defaukt it inflates Helm charts before applying them
+# this emulates, at the shell, Argo's behavior about Helm charts - by default it inflates Helm charts before applying them
 kustomize build --load-restrictor LoadRestrictionsNone --enable-helm "${KUSTOMIZATION_DIR}" | kubectl apply --filename -
 
-# `--load-restrictor LoadRestrictionsNone`: used to support the directory structure of this repo, based on Helm charts wrapped in Kustomizations ## TODO: ADR, expl.
+# `--load-restrictor LoadRestrictionsNone`: used to support the directory structure of this repo, based on Helm charts wrapped in Kustomizations
+
 # `--enable-helm`: enable Helm charts wrapped in Kustomizations
+
 # both flags are also configured for Argo on the chart values
 ```
 

@@ -1,0 +1,7 @@
+---
+provider:
+  name: aws
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: # TODO

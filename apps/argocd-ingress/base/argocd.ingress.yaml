@@ -1,0 +1,24 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    alb.ingress.kubernetes.io/load-balancer-name: argocd
+    alb.ingress.kubernetes.io/group.name: argocd
+    # alb.ingress.kubernetes.io/security-groups: argocd-alb
+    alb.ingress.kubernetes.io/manage-backend-security-group-rules: "true"
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    ## examples
+    # alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    # alb.ingress.kubernetes.io/healthcheck-port: "8081"
+    # alb.ingress.kubernetes.io/healthcheck-path: /admin/health
+    # alb.ingress.kubernetes.io/success-codes: "200"
+
+spec:
+  ingressClassName: alb

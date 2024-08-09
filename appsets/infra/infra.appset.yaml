@@ -10,6 +10,10 @@ spec:
   template:
     metadata:
       name: "{{.name}}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+      # annotations:
+      #   argocd.argoproj.io/sync-wave: "{{.wave}}"
     spec:
       project: infra
       syncPolicy:

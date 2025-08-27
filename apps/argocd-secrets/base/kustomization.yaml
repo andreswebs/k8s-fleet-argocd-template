@@ -1,0 +1,9 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+
+resources:
+  - default.ecr-auth-token.yaml
+  - aws-ecr-token-oci.externalsecret.yaml
+  - aws-ecr-token-dockerconfig.externalsecret.yaml

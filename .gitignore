@@ -1,7 +1,6 @@
-tmp/
-keys/
-.envrc
 .DS_Store
+.envrc
+
 *.bak
 *.bak.*
 **/charts/

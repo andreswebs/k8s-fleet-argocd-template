@@ -1,0 +1,4 @@
+---
+- op: add
+  path: /spec/targetGroupName
+  value: argocd-dev-2

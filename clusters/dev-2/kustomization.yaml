@@ -1,0 +1,44 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: argocd
+resources:
+  - ../../appprojects/root
+  - ../../appprojects/self
+  - ../../appprojects/infra
+  - ../../appprojects/workloads
+  - ../../.argocd/bootstrap
+  - ../../appsets/infra
+
+patches:
+  - path: patches/argocd.app.yaml
+    target:
+      kind: Application
+      group: argoproj.io
+      version: v1alpha1
+      name: argocd
+      namespace: argocd
+
+  - path: ../../shared-patches/app.yaml
+    target:
+      kind: Application
+      group: argoproj.io
+      version: v1alpha1
+      name: argocd
+      namespace: argocd
+
+  - path: patches/infra.appset.yaml
+    target:
+      kind: ApplicationSet
+      group: argoproj.io
+      version: v1alpha1
+      name: infra
+      namespace: argocd
+
+  - path: ../../shared-patches/appset.yaml
+    target:
+      kind: ApplicationSet
+      group: argoproj.io
+      version: v1alpha1
+      name: infra
+      namespace: argocd

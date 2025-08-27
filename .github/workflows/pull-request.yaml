@@ -1,0 +1,49 @@
+---
+name: Pull Request
+
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+    branches: [main]
+
+## TODO: enable when we enable PR diffs and comments
+# permissions:
+#   contents: read
+#   id-token: write
+#   pull-requests: write
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install yamllint if needed
+        shell: bash
+        run: |
+          if ! command -v yamllint &> /dev/null; then
+            sudo pip3 install yamllint > /dev/null 2>&1
+          fi
+
+      - name: YAML Lint
+        run: yamllint .
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: python -m pip install pre-commit
+        shell: bash
+      - run: python -m pip freeze --local
+        shell: bash
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: ${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: pre-commit run --show-diff-on-failure --all-files --color=always
+        shell: bash

@@ -1,6 +1,6 @@
 # k8s-fleet
 
-This repository contains configuration for a set of k8s clusters using Argo CD.
+This repository contains configuration for a fleet of k8s clusters where each cluster is using Argo CD in standalone mode.
 
 ## Argo CD Bootstrap
 
@@ -21,6 +21,12 @@ Upgrades to Argo CD can be initiated by changing the chart version in
 Create a k8s Secret for private Git repository access. This is done differently
 for each Git provider.
 
+The examples below describe how to do it manually, but it should normally be done by an Infrastructure-as-Code tool such as Terraform, OpenTofu or Pulumi.
+
+Specifically, the Secret must be securely created outside this repo, for example from an IaC pipeline. Usually this is done at the moment of cluster creation.
+
+Argo will detect the Secret through the required `argocd.argoproj.io/secret-type=repo-creds` label.
+
 #### Example: Secret for Azure DevOps (SSH):
 
 0. create SSH key pair:
@@ -31,7 +37,7 @@ ssh-keygen -t rsa -b 4096 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
 
 1. store the public key on Azure DevOps
 
-2. create k8s Secret containing the private key on the cluster
+2. create a k8s Secret containing the private key on the cluster
 
 This is the Secret's structure:
 
@@ -60,22 +66,56 @@ pipeline. Usually this is done at the moment of cluster creation.
 Argo will detect the Secret through the required
 `argocd.argoproj.io/secret-type=repo-creds` label.
 
-### Example: Argo bootstrap running the commands imperatively from a shell:
+#### Example: Secret for GitHub (SSH):
 
-This will install the Argo CD Helm chart on the `dev` cluster:
+0. create SSH key pair:
 
 ```sh
-KUSTOMIZATION_DIR="./.argocd/overlays/dev"
-
-# this emulates, at the shell, Argo's behavior about Helm charts - by default it inflates Helm charts before applying them
-kustomize build --load-restrictor LoadRestrictionsNone --enable-helm "${KUSTOMIZATION_DIR}" | kubectl apply --filename -
-
-# `--load-restrictor LoadRestrictionsNone`: used to support the directory structure of this repo, based on Helm charts wrapped in Kustomizations
-
-# `--enable-helm`: enable Helm charts wrapped in Kustomizations
-
-# both flags are also configured for Argo on the chart values
+ssh-keygen -t ed25519 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
 ```
+
+1. store the public key on the GitHub repository as a "deploy key"
+
+2. create k8s Secret containing the private key on the cluster
+
+This is the Secret's structure:
+
+```yaml
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-k8s-admin
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repo-creds ## required
+stringData:
+  type: git
+  url: ssh://git@github.com/example-org/example-repo
+  sshPrivateKey: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    bAAAAAAAAAetcetc ....
+    -----END OPENSSH PRIVATE KEY-----
+```
+
+### Example: Argo bootstrap running the commands imperatively from a shell:
+
+This will install the Argo CD Helm chart on the `dev-1` cluster:
+
+```sh
+KUSTOMIZATION_DIR="./.argocd/overlays/dev-1"
+
+kustomize build --load-restrictor LoadRestrictionsNone --enable-helm "${KUSTOMIZATION_DIR}" | kubectl apply --filename -
+```
+
+The command above emulates, at the shell, Argo's behavior about Helm charts - by default it inflates Helm charts before applying them.
+
+Note the flags passed to the `kustomize` command:
+
+- `--load-restrictor LoadRestrictionsNone`: this is used to support the directory structure of this repo, based on Helm charts wrapped in Kustomizations
+- `--enable-helm`: enable Helm charts wrapped in Kustomizations
+
+Both flags are also configured for Argo on the chart values. In this way, the behavior of the imperative command will match the behavior of Argo when self-managing the installation after the bootstrap.
 
 ### Temporary access to the UI:
 
@@ -85,16 +125,16 @@ Expose Argo UI on localhost via port-forward:
 kubectl port-forward --namespace argocd svc/argocd-server 8080:443
 ```
 
-Fetch temporary `admin` password:
+Fetch the temporary `admin` password:
 
 ```sh
 kubectl --namespace argocd get secret argocd-initial-admin-secret \
   --output jsonpath="{.data.password}" | base64 -d; echo
 ```
 
-(Connect to the UI on [`https://localhost:8080`](https://localhost:8080), and
+(Connect to the UI on [https://localhost:8080](https://localhost:8080), and
 accept the insecure certificate warning for now. This gets fixed when the Argo
-managed applications get bootstrapped in a further step. Username is `admin`.)
+managed applications get bootstrapped in a further step. The username is `admin`.)
 
 ## Cluster Bootstrap
 
@@ -114,7 +154,7 @@ will install the full cluster configuration on that cluster.
 ### Example: Cluster bootstrap running the commands imperatively from a shell:
 
 ```sh
-KUSTOMIZATION_DIR="clusters/dev"
+KUSTOMIZATION_DIR="clusters/dev-1"
 kubectl apply --kustomize "${KUSTOMIZATION_DIR}"
 kubectl apply --filename "${KUSTOMIZATION_DIR}/root.app.yaml"
 ```
@@ -125,4 +165,4 @@ kubectl apply --filename "${KUSTOMIZATION_DIR}/root.app.yaml"
 
 ## License
 
-This project is licensed under the [Unlicense](UNLICENSE.md).
+This project is licensed under the [Unlicense](UNLICENSE).

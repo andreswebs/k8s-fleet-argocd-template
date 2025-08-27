@@ -1,0 +1,4 @@
+---
+- op: add
+  path: /spec/source/path
+  value: .argocd/overlays/dev-1

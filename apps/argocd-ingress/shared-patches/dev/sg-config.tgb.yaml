@@ -1,0 +1,5 @@
+---
+# https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.7/guide/targetgroupbinding/spec/#elbv2.k8s.aws/v1beta1.NetworkingIngressRule
+- op: replace
+  path: /spec/networking/ingress/0/from/0/securityGroup/groupID
+  value: # TODO: add the LB security group here

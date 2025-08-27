@@ -1,0 +1,14 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+
+helmCharts:
+  - name: aws-load-balancer-controller
+    repo: https://aws.github.io/eks-charts
+    version: 1.8.1
+    namespace: kube-system
+    releaseName: aws-lb-controller
+    valuesFile: ../../base/aws-lb-controller.helm.values.yaml
+    additionalValuesFiles:
+      - aws-lb-controller.helm.values.yaml

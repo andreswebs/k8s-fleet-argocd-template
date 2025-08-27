@@ -1,8 +1,0 @@
----
-serviceAccount:
-  annotations:
-    eks.amazonaws.com/role-arn: # TODO
-
-settings:
-  clusterName: dev # TODO
-  interruptionQueue: karpenter-dev # TODO

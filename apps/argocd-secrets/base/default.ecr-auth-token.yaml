@@ -1,0 +1,7 @@
+---
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: ECRAuthorizationToken
+metadata:
+  name: aws-ecr-token
+  namespace: argocd
+spec: {}

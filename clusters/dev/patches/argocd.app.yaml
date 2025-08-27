@@ -1,8 +1,0 @@
----
-- op: add
-  path: /spec/source/path
-  value: .argocd/overlays/dev
-
-- op: add
-  path: /spec/source/repoURL
-  value: ssh://git@ssh.dev.azure.com/v3/andreswebs/sandbox/k8s-fleet

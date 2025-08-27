@@ -2,7 +2,7 @@
 extends: default
 
 ignore:
-  - .argocd/overlays/**/charts
+  - "**/**/charts"
 
 rules:
   document-start: enable

@@ -1,0 +1,18 @@
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: argocd-grpc
+  namespace: argocd
+spec:
+  serviceRef:
+    name: argocd-server-grpc
+    port: 443
+  networking:
+    ingress:
+      - from:
+          - securityGroup:
+              groupID: ""
+        ports:
+          - port: 8080
+            protocol: TCP

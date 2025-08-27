@@ -1,6 +1,0 @@
----
-clusterName: dev # TODO
-enableCertManager: true
-serviceAccount:
-  annotations:
-    eks.amazonaws.com/role-arn: # TODO

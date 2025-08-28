@@ -155,7 +155,7 @@ will install the full cluster configuration on that cluster.
 
 ```sh
 KUSTOMIZATION_DIR="clusters/dev-1"
-kubectl apply --kustomize "${KUSTOMIZATION_DIR}"
+kustomize build --load-restrictor LoadRestrictionsNone --enable-helm "${KUSTOMIZATION_DIR}" |  kubectl apply --filename -
 kubectl apply --filename "${KUSTOMIZATION_DIR}/root.app.yaml"
 ```
 

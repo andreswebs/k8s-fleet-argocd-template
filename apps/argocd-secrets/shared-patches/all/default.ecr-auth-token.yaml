@@ -1,4 +1,4 @@
 ---
 - op: add
   path: /spec/region
-  value: us-east-2 # TODO
+  value: # TODO

@@ -1,4 +1,4 @@
 ---
 - op: add
   path: /spec/source/repoURL
-  value: # TODO
+  value: # ssh://git@git@github.com:example-org/example-repo ## TODO

@@ -9,6 +9,7 @@ metadata:
 spec:
   project: root
   source:
+    repoURL: # ssh://git@git@github.com:example-org/example-repo ## TODO
     targetRevision: main
     path: clusters/dev-1
   destination:

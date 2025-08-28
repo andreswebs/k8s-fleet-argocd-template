@@ -10,7 +10,6 @@ spec:
   project: root
   source:
     targetRevision: main
-    repoURL: # TODO
     path: clusters/dev-1
   destination:
     server: https://kubernetes.default.svc

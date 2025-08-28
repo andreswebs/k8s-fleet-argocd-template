@@ -16,12 +16,3 @@ helmCharts:
     valuesFile: ../../base/otel-operator.helm.values.yaml
     additionalValuesFiles:
       - otel-operator.helm.values.yaml
-
-patches:
-  - path: ./patches/opentelemetry-collector.sa.yaml
-    target:
-      group: ""
-      version: v1
-      kind: ServiceAccount
-      name: otel-collector
-      namespace: o11y

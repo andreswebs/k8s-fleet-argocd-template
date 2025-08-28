@@ -12,19 +12,40 @@ spec:
       name: "{{.name}}"
       finalizers:
         - resources-finalizer.argocd.argoproj.io
-      # annotations:
-      #   argocd.argoproj.io/sync-wave: "{{.wave}}"
+      annotations:
+        argocd.argoproj.io/sync-wave: '{{ dig "wave" "100" . }}'
     spec:
       project: infra
+
       syncPolicy:
         syncOptions:
           - CreateNamespace=true
+          - ApplyOutOfSyncOnly=true
+          - RespectIgnoreDifferences=true
+          - ServerSideApply={{ dig "syncServerSideApply" "false" . }}
         automated:
           prune: true
           selfHeal: true
+
       source:
         targetRevision: main
-        path: "{{.path}}"
+        path: "{{ .path }}"
       destination:
         server: https://kubernetes.default.svc
-        namespace: "{{.namespace}}"
+        namespace: "{{ .namespace }}"
+
+      ## prevent out-of-sync loops from various controllers activities
+      # https://github.com/argoproj/argo-cd/issues/9071#issuecomment-1101744574
+      ignoreDifferences:
+        - group: admissionregistration.k8s.io
+          kind: ValidatingWebhookConfiguration
+          jqPathExpressions:
+            - .webhooks[]?.clientConfig.caBundle
+        - group: admissionregistration.k8s.io
+          kind: MutatingWebhookConfiguration
+          jqPathExpressions:
+            - .webhooks[]?.clientConfig.caBundle
+        - group: "*"
+          kind: "*"
+          managedFieldsManagers:
+            - external-secrets

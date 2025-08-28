@@ -6,39 +6,46 @@
         generators:
           - list:
               elements:
-                - clusterName: dev
+                - clusterName: dev-2
           - list:
               elements:
-                - name: argocd-ingress
-                  namespace: argocd
-                  path: apps/argocd-ingress/overlays/{{.clusterName}}
-                - name: metrics-server
-                  namespace: kube-system
-                  path: apps/metrics-server/overlays/{{.clusterName}}
                 - name: cert-manager
                   namespace: cert-manager
                   path: apps/cert-manager/overlays/{{.clusterName}}
-                - name: o11y
-                  namespace: o11y
-                  path: apps/o11y/overlays/{{.clusterName}}
-                - name: external-dns
-                  namespace: external-dns
-                  path: apps/external-dns/overlays/{{.clusterName}}
-                - name: aws-lb-controller
-                  namespace: kube-system
-                  path: apps/aws-lb-controller/overlays/{{.clusterName}}
-                - name: karpenter
-                  namespace: kube-system
-                  path: apps/karpenter/overlays/{{.clusterName}}
+                  wave: 0
+
                 - name: external-secrets
                   namespace: external-secrets
                   path: apps/external-secrets/overlays/{{.clusterName}}
-                - name: aws-appmesh-controller
-                  namespace: appmesh-system
-                  path: apps/aws-app-mesh-controller/overlays/{{.clusterName}}
-                - name: otel-collector
+                  wave: 0
+
+                - name: metrics-server
+                  namespace: kube-system
+                  path: apps/metrics-server/overlays/{{.clusterName}}
+                  wave: 0
+
+                - name: secret-stores
+                  namespace: external-secrets
+                  path: apps/secret-stores/overlays/{{ .clusterName }}
+                  wave: 1
+
+                - name: o11y
                   namespace: o11y
-                  path: apps/otel-collector/overlays/{{.clusterName}}
-                - name: app-mesh
-                  namespace: apps
-                  path: apps/app-mesh/overlays/{{.clusterName}}
+                  path: apps/o11y/overlays/{{ .clusterName }}
+                  wave: 2
+                  syncServerSideApply: true
+
+                - name: argocd-secrets
+                  namespace: argocd
+                  path: apps/argocd-secrets/overlays/{{ .clusterName }}
+                  wave: 2
+
+                - name: aws-lb-controller
+                  namespace: kube-system
+                  path: apps/aws-lb-controller/overlays/{{ .clusterName }}
+                  wave: 3
+
+                - name: argocd-ingress
+                  namespace: argocd
+                  path: apps/argocd-ingress/overlays/{{ .clusterName }}
+                  wave: 3

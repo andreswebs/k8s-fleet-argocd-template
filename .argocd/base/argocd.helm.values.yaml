@@ -19,6 +19,14 @@ global:
     format: json
     level: info
 
+  networkPolicy:
+    ## chart 8 and later default this to true, which renders six NetworkPolicy
+    ## objects covering every Argo CD component. those are live rules on any
+    ## cluster whose CNI enforces them, EKS Auto Mode included, so enabling them
+    ## blindly can cut off ingress to the UI and metrics scrapes. a consumer
+    ## opts in per cluster after testing both.
+    create: false
+
 configs:
   cm:
     create: true
@@ -33,7 +41,7 @@ configs:
     create: true
 
   secret:
-    createSecret: false
+    createSecret: true
 
 server:
   name: server
@@ -45,22 +53,3 @@ server:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 50
     targetMemoryUtilizationPercentage: 50
-
-  extensions:
-    enabled: true
-    extensionList:
-      # https://github.com/argoproj-labs/rollout-extension
-      - name: rollout-extension
-        env: {}
-###############
-# overlay: server.extensions.extensionList[0].env:
-################
-#
-# server:
-#   extensions:
-#     enabled: true
-#     extensionList:
-#       - name: rollout-extension
-#         env:
-#           - name: EXTENSION_URL
-#             value: https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.5/extension.tar

@@ -11,4 +11,9 @@ pdb:
 
 manager:
   collectorImage:
+    ## the chart defaults to the opentelemetry-collector-k8s distribution, which
+    ## is smaller and curated for Kubernetes but ships a fixed set of components.
+    ## a template cannot know which receivers and exporters a consumer needs, so
+    ## it pins the contrib distribution, which carries all of them. narrow this
+    ## to the k8s distribution once the pipeline's components are known.
     repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib

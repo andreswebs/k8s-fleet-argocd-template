@@ -12,13 +12,21 @@ on:
 #   id-token: write
 #   pull-requests: write
 
+env:
+  # kustomize and helm are pinned to the versions Argo CD 3.5 renders with;
+  # a different helm major produces different manifests for the same chart
+  KUSTOMIZE_VERSION: 5.8.1
+  KUSTOMIZE_SHA256: 029a7f0f4e1932c52a0476cf02a0fd855c0bb85694b82c338fc648dcb53a819d
+  HELM_VERSION: 4.2.1
+  HELM_SHA256: 479dca836e5b45e8bd222400c5591b0e3a647378f03ff96597180db97c17fdae
+
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install yamllint if needed
         shell: bash
@@ -33,17 +41,55 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: 3.x
       - run: python -m pip install pre-commit
         shell: bash
       - run: python -m pip freeze --local
         shell: bash
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/pre-commit
           key: ${{ hashFiles('.pre-commit-config.yaml') }}
       - run: pre-commit run --show-diff-on-failure --all-files --color=always
         shell: bash
+
+  render:
+    name: Render
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Install kustomize and helm
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/bin"
+
+          kustomize_archive="kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location --output "${RUNNER_TEMP}/${kustomize_archive}" \
+            "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/${kustomize_archive}"
+          echo "${KUSTOMIZE_SHA256}  ${RUNNER_TEMP}/${kustomize_archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "${RUNNER_TEMP}/${kustomize_archive}" --directory "${RUNNER_TEMP}/bin" kustomize
+
+          helm_archive="helm-v${HELM_VERSION}-linux-amd64.tar.gz"
+          curl --fail --silent --show-error --location --output "${RUNNER_TEMP}/${helm_archive}" \
+            "https://get.helm.sh/${helm_archive}"
+          echo "${HELM_SHA256}  ${RUNNER_TEMP}/${helm_archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "${RUNNER_TEMP}/${helm_archive}" --directory "${RUNNER_TEMP}" \
+            --strip-components 1 linux-amd64/helm
+          mv "${RUNNER_TEMP}/helm" "${RUNNER_TEMP}/bin/helm"
+
+          echo "${RUNNER_TEMP}/bin" >> "${GITHUB_PATH}"
+
+      - name: Report tool versions
+        shell: bash
+        run: |
+          kustomize version
+          helm version --short
+
+      - name: Render every overlay
+        run: scripts/render-all.sh

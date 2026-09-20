@@ -41,6 +41,14 @@ KUSTOMIZATION_DIR="overlays/<cluster-name>" # <-- this is must be set to the rel
 kustomize build --load-restrictor LoadRestrictionsNone --enable-helm "${KUSTOMIZATION_DIR}"
 ```
 
+### Render every overlay
+
+```sh
+scripts/render-all.sh
+```
+
+This is the gate CI runs: it builds every kustomization under `.argocd/overlays`, `clusters` and `apps/*/overlays` with the flags above, and fails naming the first overlay that does not build. Pass `--out DIR` to keep the rendered manifests for inspection.
+
 ### Accessing Argo CD UI
 
 Expose the Argo CD UI locally:

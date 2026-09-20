@@ -1,4 +1,7 @@
 ---
 - op: add
   path: /spec/source/repoURL
-  value: # ssh://git@git@github.com:example-org/example-repo ## TODO
+  ## the url form must match the credential type in the repo-creds Secret:
+  ##   https://github.com/<org>/<repo>     for a GitHub App or an https token
+  ##   ssh://git@github.com/<org>/<repo>   for an ssh deploy key
+  value: ## TODO

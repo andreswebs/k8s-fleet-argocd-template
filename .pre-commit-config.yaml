@@ -7,5 +7,7 @@ repos:
       - id: trailing-whitespace
       - id: check-case-conflict
       - id: detect-private-key
-        exclude: README.md ## contains a dummy example key
+        ## these carry dummy key headers on purpose: a credential example that
+        ## does not look like the real thing is not much of an example
+        exclude: ^(README\.md|examples/|docs/github-app-credentials\.md)
       - id: mixed-line-ending

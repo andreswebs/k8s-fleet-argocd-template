@@ -34,84 +34,49 @@ including what Argo CD 3.5 requires of an extension build.
 This template targets an EKS cluster in Auto Mode, whose managed load balancing replaces the self-managed AWS Load Balancer Controller that the template used to install. Consumers running on a cluster without Auto Mode must add that controller back themselves; the application directory this template used to carry for it, under `apps/`, is recoverable from this repository's history and is the place to start.
 
 Create a k8s Secret for private Git repository access. This is done differently
-for each Git provider.
-
-The examples below describe how to do it manually, but it should normally be done by an Infrastructure-as-Code tool such as Terraform, OpenTofu or Pulumi.
-
-Specifically, the Secret must be securely created outside this repo, for example from an IaC pipeline. Usually this is done at the moment of cluster creation.
-
-Argo will detect the Secret through the required `argocd.argoproj.io/secret-type=repo-creds` label.
-
-#### Example: Secret for Azure DevOps (SSH)
-
-1. create SSH key pair:
-
-   ```sh
-   ssh-keygen -t rsa -b 4096 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
-   ```
-
-2. store the public key on Azure DevOps
-
-3. create a k8s Secret containing the private key on the cluster
-
-This is the Secret's structure:
-
-```yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: azure-repo-creds
-  namespace: argocd
-  labels:
-    argocd.argoproj.io/secret-type: repo-creds ## required
-stringData:
-  type: git
-  ## using a prefix for the `url` field, this becomes a credentials template for Argo
-  url: ssh://git@ssh.dev.azure.com/v3/example-org/example-proj
-  sshPrivateKey: |
-    -----BEGIN OPENSSH PRIVATE KEY-----
-    bAAAAAAAAAetcetc ....
-    -----END OPENSSH PRIVATE KEY-----
-```
+for each Git provider and credential type.
 
 The Secret must be securely created outside this repo, for example from an IaC
-pipeline. Usually this is done at the moment of cluster creation.
+pipeline such as Terraform, OpenTofu or Pulumi. Usually this is done at the
+moment of cluster creation.
 
 Argo will detect the Secret through the required
-`argocd.argoproj.io/secret-type=repo-creds` label.
+`argocd.argoproj.io/secret-type=repo-creds` label. Without that label the
+Secret is invisible to Argo CD, whatever else it contains.
 
-#### Example: Secret for GitHub (SSH)
+The `repoURL` the Applications use must match the credential: an HTTPS URL for
+GitHub App or token credentials, an SSH URL for a deploy key.
 
-1. create SSH key pair:
+**GitHub, using a GitHub App.** The credential to prefer for a fleet: scoped to
+chosen repositories, short-lived tokens, and it outlives the person who created
+it. See [Give Argo CD access to a private GitHub repository with a GitHub
+App](docs/github-app-credentials.md) for creating the App and finding the two
+identifiers it needs. Manifest:
+[`examples/repo-creds.github-app.yaml`](examples/repo-creds.github-app.yaml).
 
-   ```sh
-   ssh-keygen -t ed25519 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
-   ```
+**GitHub, using an SSH deploy key.** Generate a key pair, store the public half
+on the repository as a deploy key, and put the private half in the Secret:
 
-2. store the public key on the GitHub repository as a "deploy key"
-
-3. create k8s Secret containing the private key on the cluster
-
-This is the Secret's structure:
-
-```yaml
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: github-k8s-admin
-  namespace: argocd
-  labels:
-    argocd.argoproj.io/secret-type: repo-creds ## required
-stringData:
-  type: git
-  url: ssh://git@github.com/example-org/example-repo
-  sshPrivateKey: |
-    -----BEGIN OPENSSH PRIVATE KEY-----
-    bAAAAAAAAAetcetc ....
-    -----END OPENSSH PRIVATE KEY-----
+```sh
+ssh-keygen -t ed25519 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
 ```
+
+Manifest:
+[`examples/repo-creds.github-ssh.yaml`](examples/repo-creds.github-ssh.yaml).
+
+**Azure DevOps, using SSH.** Generate a key pair, store the public half on Azure
+DevOps, and put the private half in the Secret:
+
+```sh
+ssh-keygen -t rsa -b 4096 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
+```
+
+Manifest:
+[`examples/repo-creds.azure-ssh.yaml`](examples/repo-creds.azure-ssh.yaml).
+
+In each example the `url` field is a prefix, which makes the Secret a
+credentials template covering every repository underneath it. Use the full
+repository URL, with `secret-type: repository`, to scope it to one.
 
 ### Example: Argo bootstrap running the commands imperatively from a shell
 

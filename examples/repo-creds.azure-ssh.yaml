@@ -1,0 +1,21 @@
+---
+## repository credentials for Azure DevOps over SSH.
+## create this outside the repository, normally from an IaC pipeline at the
+## moment of cluster creation. never commit a real private key.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-repo-creds
+  namespace: argocd
+  labels:
+    ## required: without this label Argo CD ignores the Secret entirely
+    argocd.argoproj.io/secret-type: repo-creds
+stringData:
+  type: git
+  ## a url prefix makes this a credentials template, matching every
+  ## repository underneath it. use the full repository url to scope it to one.
+  url: ssh://git@ssh.dev.azure.com/v3/example-org/example-proj
+  sshPrivateKey: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    bAAAAAAAAAetcetc ....
+    -----END OPENSSH PRIVATE KEY-----

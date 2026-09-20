@@ -18,6 +18,8 @@
                   namespace: external-secrets
                   path: apps/external-secrets/overlays/{{.clusterName}}
                   wave: 0
+                  ## the chart CRDs exceed the client-side apply annotation size limit
+                  syncServerSideApply: true
 
                 - name: metrics-server
                   namespace: kube-system

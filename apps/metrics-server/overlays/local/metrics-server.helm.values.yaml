@@ -1,0 +1,7 @@
+---
+## k3s kubelets serve a self-signed certificate that metrics-server cannot
+## verify, so it must be told to skip that check. this is acceptable only
+## because the cluster is a throwaway local one.
+## the k3d cluster is created with k3s's own bundled metrics-server disabled,
+## so this release is the only one running.
+args: [--kubelet-insecure-tls]

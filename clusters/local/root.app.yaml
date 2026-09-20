@@ -1,0 +1,30 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: root
+  source:
+    ## the url form must match the credential type in the repo-creds Secret:
+    ##   https://github.com/<org>/<repo>     for a GitHub App or an https token
+    ##   ssh://git@github.com/<org>/<repo>   for an ssh deploy key
+    repoURL: ## TODO
+    targetRevision: main
+    path: clusters/local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    retry:
+      limit: 3
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=false
+      - ServerSideApply=true

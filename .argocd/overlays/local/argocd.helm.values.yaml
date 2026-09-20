@@ -1,0 +1,12 @@
+---
+global:
+  ## overrides the shared dev patch's empty placeholder, so argocd-cm renders a
+  ## real url. the name is never resolved: *.localtest.me resolves to loopback.
+  domain: argocd.localtest.me
+
+configs:
+  params:
+    ## k3d has no load balancer terminating tls in front of Argo CD, so the
+    ## server serves plain http and the CLI connects with --plaintext.
+    ## this belongs to this overlay alone and must never reach base.
+    server.insecure: true

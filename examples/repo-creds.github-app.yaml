@@ -1,0 +1,26 @@
+---
+## repository credentials for GitHub using a GitHub App.
+## see docs/github-app-credentials.md for how to obtain each value.
+## create this outside the repository, normally from an IaC pipeline at the
+## moment of cluster creation. never commit a real private key.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-app-repo-creds
+  namespace: argocd
+  labels:
+    ## required: without this label Argo CD ignores the Secret entirely
+    argocd.argoproj.io/secret-type: repo-creds
+stringData:
+  type: git
+  ## https, not ssh: GitHub App authentication is token-based over https.
+  ## a url prefix makes this a credentials template, matching every
+  ## repository underneath it. use the full repository url to scope it to one.
+  url: https://github.com/example-org
+  githubAppID: "123456"
+  githubAppInstallationID: "12345678"
+  ## GitHub issues this in PEM form. Argo CD accepts it unchanged.
+  githubAppPrivateKey: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEAetcetc ....
+    -----END RSA PRIVATE KEY-----

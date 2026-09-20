@@ -37,10 +37,9 @@
                   wave: 2
                   syncServerSideApply: true
 
-                - name: argocd-secrets
-                  namespace: argocd
-                  path: apps/argocd-secrets/overlays/{{ .clusterName }}
-                  wave: 2
+                ## the optional argocd-secrets application is not enabled by default. it only
+                ## applies to consumers pulling helm charts or images from a private ECR.
+                ## see apps/argocd-secrets/README.md for the element to paste back here.
 
                 - name: argocd-ingress
                   namespace: argocd

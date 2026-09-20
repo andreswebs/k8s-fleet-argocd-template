@@ -6,7 +6,6 @@ apps:
   - metrics-server
   - secret-stores
   - o11y
-  - argocd-secrets
   - argocd-ingress
 ---
 

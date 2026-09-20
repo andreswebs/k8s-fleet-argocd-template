@@ -49,6 +49,14 @@ scripts/render-all.sh
 
 This is the gate CI runs: it builds every kustomization under `.argocd/overlays`, `clusters` and `apps/*/overlays` with the flags above, and fails naming the first overlay that does not build. Pass `--out DIR` to keep the rendered manifests for inspection.
 
+### Check for unfilled placeholders
+
+```sh
+scripts/check-placeholders.sh
+```
+
+Fails when a cluster whose `clusters/<cluster-name>/README.md` front matter says `status: complete` still has a `TODO` in its own files or in the shared files it inherits. The template's own clusters ship as `status: template` and are skipped.
+
 ### Accessing Argo CD UI
 
 Expose the Argo CD UI locally:

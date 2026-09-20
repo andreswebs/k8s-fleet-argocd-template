@@ -56,6 +56,16 @@ jobs:
       - run: pre-commit run --show-diff-on-failure --all-files --color=always
         shell: bash
 
+  placeholders:
+    name: Placeholders
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Check that complete clusters carry no placeholder
+        run: scripts/check-placeholders.sh
+
   render:
     name: Render
     runs-on: ubuntu-latest

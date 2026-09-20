@@ -7,7 +7,6 @@ apps:
   - secret-stores
   - o11y
   - argocd-secrets
-  - aws-lb-controller
   - argocd-ingress
 ---
 

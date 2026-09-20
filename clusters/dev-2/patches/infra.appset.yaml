@@ -40,11 +40,6 @@
                   path: apps/argocd-secrets/overlays/{{ .clusterName }}
                   wave: 2
 
-                - name: aws-lb-controller
-                  namespace: kube-system
-                  path: apps/aws-lb-controller/overlays/{{ .clusterName }}
-                  wave: 3
-
                 - name: argocd-ingress
                   namespace: argocd
                   path: apps/argocd-ingress/overlays/{{ .clusterName }}

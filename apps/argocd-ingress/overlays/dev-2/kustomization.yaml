@@ -9,31 +9,15 @@ patches:
   - path: patches/argocd.tgb.yaml
     target:
       kind: TargetGroupBinding
-      group: elbv2.k8s.aws
-      version: v1beta1
-      name: argocd
-      namespace: argocd
-
-  - path: ../../shared-patches/dev/sg-config.tgb.yaml
-    target:
-      kind: TargetGroupBinding
-      group: elbv2.k8s.aws
-      version: v1beta1
+      group: eks.amazonaws.com
+      version: v1
       name: argocd
       namespace: argocd
 
   - path: patches/argocd-grpc.tgb.yaml
     target:
       kind: TargetGroupBinding
-      group: elbv2.k8s.aws
-      version: v1beta1
-      name: argocd-grpc
-      namespace: argocd
-
-  - path: ../../shared-patches/dev/sg-config.tgb.yaml
-    target:
-      kind: TargetGroupBinding
-      group: elbv2.k8s.aws
-      version: v1beta1
+      group: eks.amazonaws.com
+      version: v1
       name: argocd-grpc
       namespace: argocd

@@ -14,7 +14,7 @@ patches:
       name: argocd
       namespace: argocd
 
-  - path: patches/sg-config.tgb.yaml
+  - path: ../../shared-patches/dev/sg-config.tgb.yaml
     target:
       kind: TargetGroupBinding
       group: elbv2.k8s.aws
@@ -30,7 +30,7 @@ patches:
       name: argocd-grpc
       namespace: argocd
 
-  - path: patches/sg-config.tgb.yaml
+  - path: ../../shared-patches/dev/sg-config.tgb.yaml
     target:
       kind: TargetGroupBinding
       group: elbv2.k8s.aws

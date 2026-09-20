@@ -18,6 +18,8 @@ Upgrades to Argo CD can be initiated by changing the chart version in
 
 ### Pre-requisites
 
+This template targets an EKS cluster in Auto Mode, whose managed load balancing replaces the self-managed AWS Load Balancer Controller that the template used to install. Consumers running on a cluster without Auto Mode must add that controller back themselves; the application directory this template used to carry for it, under `apps/`, is recoverable from this repository's history and is the place to start.
+
 Create a k8s Secret for private Git repository access. This is done differently
 for each Git provider.
 
@@ -27,17 +29,17 @@ Specifically, the Secret must be securely created outside this repo, for example
 
 Argo will detect the Secret through the required `argocd.argoproj.io/secret-type=repo-creds` label.
 
-#### Example: Secret for Azure DevOps (SSH):
+#### Example: Secret for Azure DevOps (SSH)
 
-0. create SSH key pair:
+1. create SSH key pair:
 
-```sh
-ssh-keygen -t rsa -b 4096 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
-```
+   ```sh
+   ssh-keygen -t rsa -b 4096 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
+   ```
 
-1. store the public key on Azure DevOps
+2. store the public key on Azure DevOps
 
-2. create a k8s Secret containing the private key on the cluster
+3. create a k8s Secret containing the private key on the cluster
 
 This is the Secret's structure:
 
@@ -66,17 +68,17 @@ pipeline. Usually this is done at the moment of cluster creation.
 Argo will detect the Secret through the required
 `argocd.argoproj.io/secret-type=repo-creds` label.
 
-#### Example: Secret for GitHub (SSH):
+#### Example: Secret for GitHub (SSH)
 
-0. create SSH key pair:
+1. create SSH key pair:
 
-```sh
-ssh-keygen -t ed25519 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
-```
+   ```sh
+   ssh-keygen -t ed25519 -f "${KEY_DIR}/${KEY_NAME}" -q -N "" -C "" < /dev/null
+   ```
 
-1. store the public key on the GitHub repository as a "deploy key"
+2. store the public key on the GitHub repository as a "deploy key"
 
-2. create k8s Secret containing the private key on the cluster
+3. create k8s Secret containing the private key on the cluster
 
 This is the Secret's structure:
 
@@ -98,7 +100,7 @@ stringData:
     -----END OPENSSH PRIVATE KEY-----
 ```
 
-### Example: Argo bootstrap running the commands imperatively from a shell:
+### Example: Argo bootstrap running the commands imperatively from a shell
 
 This will install the Argo CD Helm chart on the `dev-1` cluster:
 
@@ -117,7 +119,7 @@ Note the flags passed to the `kustomize` command:
 
 Both flags are also configured for Argo on the chart values. In this way, the behavior of the imperative command will match the behavior of Argo when self-managing the installation after the bootstrap.
 
-### Temporary access to the UI:
+### Temporary access to the UI
 
 Expose Argo UI on localhost via port-forward:
 
@@ -151,7 +153,7 @@ installed.
 After the `root` Application is installed on the cluster's Argo server, Argo
 will install the full cluster configuration on that cluster.
 
-### Example: Cluster bootstrap running the commands imperatively from a shell:
+### Example: Cluster bootstrap running the commands imperatively from a shell
 
 ```sh
 KUSTOMIZATION_DIR="clusters/dev-1"

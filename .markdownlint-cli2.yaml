@@ -1,0 +1,24 @@
+---
+## Makes `markdownlint-cli2 '**/*.md'` mean the same thing for everyone, rather
+## than depending on a configuration file in the runner's home directory.
+ignores:
+  ## Helm charts kustomize pulls in bring their own documentation. It is
+  ## vendored, gitignored and not ours to fix.
+  - "**/charts/**"
+  ## Untracked working directories that happen to hold markdown. The ticket
+  ## store in particular must never be reached by a formatter.
+  - ".tickets/**"
+  - ".local/**"
+
+config:
+  MD003:
+    style: atx
+  MD010:
+    code_blocks: false
+  MD013: false  # line-length
+  MD025:
+    front_matter_title: ""  # cluster READMEs carry front matter and an H1
+  MD033: false  # inline html
+  MD036: false  # emphasis as heading
+  MD041: false  # no top-level heading
+  MD060: false  # table pipe alignment

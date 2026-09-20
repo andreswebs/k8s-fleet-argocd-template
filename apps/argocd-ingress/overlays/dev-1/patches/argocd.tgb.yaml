@@ -1,4 +1,4 @@
 ---
 - op: add
-  path: /spec/targetGroupName
-  value: argocd-dev-1
+  path: /spec/targetGroupARN
+  value: arn:aws:elasticloadbalancing:<region>:<account>:targetgroup/argocd-dev-1/<id> ## TODO

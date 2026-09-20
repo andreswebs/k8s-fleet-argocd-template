@@ -1,18 +1,15 @@
 ---
-apiVersion: elbv2.k8s.aws/v1beta1
+apiVersion: eks.amazonaws.com/v1
 kind: TargetGroupBinding
 metadata:
   name: argocd
   namespace: argocd
+  annotations:
+    ## deleting the binding deletes the target group it is bound to, and the
+    ## target group belongs to the consumer's load balancer, not to this app.
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
+  targetType: ip
   serviceRef:
     name: argocd-server
     port: 443
-  networking:
-    ingress:
-      - from:
-          - securityGroup:
-              groupID: ""
-        ports:
-          - port: 8080
-            protocol: TCP

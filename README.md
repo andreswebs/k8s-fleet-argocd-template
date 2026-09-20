@@ -2,6 +2,15 @@
 
 This repository contains configuration for a fleet of k8s clusters where each cluster is using Argo CD in standalone mode.
 
+## Documentation
+
+- [Checklist: adding a cluster, an environment, or a consumer](docs/new-cluster-checklist.md). Start here when forking this template or adding a cluster: every value you have to supply, and which check catches it if you forget.
+- [Give Argo CD access to a private GitHub repository with a GitHub App](docs/github-app-credentials.md).
+- [Runbook: validating the k8s-fleet template on k3d](docs/k3d-validation.md). Exercises the bootstrap and self-management path locally, without AWS.
+- [Add an Argo CD UI extension](docs/argocd-extensions.md).
+
+Two applications carry their own contract and are documented beside the code: [`apps/argocd-ingress`](apps/argocd-ingress/README.md), which states what the consumer's load balancer must provide, and [`apps/argocd-secrets`](apps/argocd-secrets/README.md), which is optional and only for private ECR.
+
 ## Argo CD Bootstrap
 
 The `.argocd` directory contains a Kustomization to install Argo CD using the
@@ -25,7 +34,7 @@ that Argo CD writes the new tracking annotations on resources it now sees as
 already in sync. See the
 [Argo CD 2.14 to 3.0 upgrade guide](https://argo-cd.readthedocs.io/en/stable/operator-manual/upgrading/2.14-3.0/).
 
-This template does not install Argo Rollouts or any Argo CD UI extension. See
+This template installs no Argo CD UI extension. See
 [Add an Argo CD UI extension](docs/argocd-extensions.md) for how to add one,
 including what Argo CD 3.5 requires of an extension build.
 
@@ -125,13 +134,18 @@ declared at `clusters/<cluster-name>/root.app.yaml` for each cluster. The
 `clusters/<cluster-name>` directory contains a Kustomization which becomes
 managed by the `root` Application ("App of Apps" pattern).
 
-This step is run a single time for each cluster in it's entire lifetime, and can
+This step is run a single time for each cluster in its entire lifetime, and can
 be executed from the IaC pipeline to bootstrap a cluster. It consists in
 applying the `root.app.yaml` (Application) manifest to a cluster with Argo CD
 installed.
 
 After the `root` Application is installed on the cluster's Argo server, Argo
 will install the full cluster configuration on that cluster.
+
+Applications track `targetRevision: main`, which is hard-coded rather than
+left as a placeholder because most forks keep that branch name. If yours does
+not, [the checklist](docs/new-cluster-checklist.md) names every place to
+change it.
 
 ### Example: Cluster bootstrap running the commands imperatively from a shell
 
@@ -140,6 +154,27 @@ KUSTOMIZATION_DIR="clusters/dev-1"
 kustomize build --load-restrictor LoadRestrictionsNone --enable-helm "${KUSTOMIZATION_DIR}" | kubectl apply --server-side --force-conflicts --filename -
 kubectl apply --server-side --force-conflicts --filename "${KUSTOMIZATION_DIR}/root.app.yaml"
 ```
+
+## Validating changes locally
+
+Every overlay in this repository must build with the flags Argo CD renders
+with. That is what CI checks, and you can run it yourself:
+
+```sh
+scripts/render-all.sh
+```
+
+Rendering proves the manifests are well formed, not that they work. To
+exercise the bootstrap, Argo CD's self-management and the applications that do
+not need AWS, stand up the `local` cluster on k3d and follow
+[the k3d validation runbook](docs/k3d-validation.md). It takes about twenty
+minutes and is the cheapest way to catch a broken upgrade before a real
+cluster sees it.
+
+Before adding a cluster, read
+[the checklist](docs/new-cluster-checklist.md), which lists every value you
+must supply and ends with the same two commands plus
+`scripts/check-placeholders.sh`.
 
 ## Authors
 

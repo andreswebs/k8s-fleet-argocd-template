@@ -22,7 +22,7 @@ The `k8s-fleet` repository manages configurations for a fleet of Kubernetes clus
 3. **Applications and Overlays**
 
    - Applications are organized under `apps/`.
-   - Overlays for environments (e.g., `dev-1`, `dev-2`) are used to customize configurations.
+   - Overlays per cluster (`dev-1`, `dev-2`, and `local`) are used to customize configurations.
 
 4. **Shared Patches**
    - Common patches are stored in `shared-patches/`.
@@ -72,11 +72,41 @@ kubectl --namespace argocd get secret argocd-initial-admin-secret \
   --output jsonpath="{.data.password}" | base64 -d; echo
 ```
 
+### Bumping a chart version
+
+Any change to a `helmCharts[].version` must pass `scripts/render-all.sh`
+before it is committed, because a values key the template sets can disappear
+between chart releases and the render is what catches it.
+
+Two further rules:
+
+- Before pinning a new version, measure the chart's largest CRD as compact
+  JSON against the 262144-byte limit on the annotation that client-side apply
+  writes. A CRD over that limit cannot be applied client-side, and the
+  Application needs `syncServerSideApply: true` in the cluster's
+  `patches/infra.appset.yaml`:
+
+  ```sh
+  CHART_NAME="external-secrets"
+  CHART_REPO="https://charts.external-secrets.io"
+  CHART_VERSION="2.10.0"
+
+  helm template x "${CHART_NAME}" --repo "${CHART_REPO}" \
+    --version "${CHART_VERSION}" --include-crds \
+    | yq -N -o=json -I=0 'select(.kind=="CustomResourceDefinition")' \
+    | while IFS= read -r crd; do printf '%s\n' "${crd}" | wc -c; done \
+    | sort -rn | head -1
+  ```
+
+- A change to the `argo-cd` chart additionally needs a k3d bootstrap, per
+  `docs/k3d-validation.md`. Rendering cannot show that Argo CD can still
+  upgrade itself, which is the thing most likely to break.
+
 ## Conventions and Patterns
 
 - **Kustomize with Helm**: Helm charts are wrapped in Kustomizations. Use `--enable-helm` and `--load-restrictor LoadRestrictionsNone` flags with `kustomize`.
 - **Secrets Management**: Secrets for Git repository access must be created outside this repository, typically via an IaC pipeline.
-- **Environment Overlays**: Use overlays (e.g., `dev-1`, `dev-2`) for environment-specific configurations.
+- **Cluster Overlays**: Use overlays for per-cluster configuration. The template ships `dev-1` and `dev-2` as examples and `local` for validation on k3d.
 
 ## Key Files and Directories
 

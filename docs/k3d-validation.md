@@ -367,9 +367,15 @@ Nothing outside the cluster was created. Remove pulled charts if the
 working tree should be clean:
 
 ```sh
-git clean -ndX -- '**/charts/'   # dry run
-git clean -fdX -- '**/charts/'
+git clean -ndX -- '.argocd/overlays/*/charts/' 'apps/*/overlays/*/charts/'   # dry run
+git clean -fdX -- '.argocd/overlays/*/charts/' 'apps/*/overlays/*/charts/'
 ```
+
+Name the two locations explicitly. A `'**/charts/'` pathspec does **not**
+constrain `git clean -X` to chart directories: every gitignored directory is
+a candidate for removal, so the dry run also offers to delete `.tickets/` and
+anything under `.local/`. Always read the `-n` output before running the
+`-f`.
 
 ## 12. What this runbook does not cover (EKS only)
 

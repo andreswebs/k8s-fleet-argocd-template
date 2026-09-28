@@ -12,5 +12,5 @@ helmCharts:
     releaseName: argocd
     valuesFile: ../../base/argocd.helm.values.yaml
     additionalValuesFiles:
-      - ../shared-patches/dev/argocd.helm.values.yaml
+      - ../shared-patches/local/argocd.helm.values.yaml
       - argocd.helm.values.yaml

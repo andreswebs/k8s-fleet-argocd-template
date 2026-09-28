@@ -32,7 +32,9 @@ If you pull Helm charts or container images from a private ECR registry, also fi
 
 An environment here is a group of clusters sharing a set of values, the way `dev-1` and `dev-2` share the `dev` patches.
 
-The shared patch at `.argocd/overlays/shared-patches/<env>/argocd.helm.values.yaml` holds what every cluster in the environment genuinely shares, such as whether `exec.enabled` is on, and carries the commented opt-in for the chart's NetworkPolicy objects. It holds no placeholder today.
+The shared patch at `.argocd/overlays/shared-patches/<env>/argocd.helm.values.yaml` holds what every cluster in the environment genuinely shares, such as whether `exec.enabled` is on, and carries the commented opt-in for the chart's NetworkPolicy objects. Neither of the two that ship holds a placeholder today.
+
+A cluster reads exactly one of these, named in the `additionalValuesFiles` of its `.argocd/overlays/<cluster-name>/kustomization.yaml`, and `scripts/check-placeholders.sh` scans only that one. `dev-1` and `dev-2` share `shared-patches/dev`; `local` has its own `shared-patches/local`, because a throwaway k3d cluster is not a dev cluster and should not inherit that environment's values. A new environment is a new directory here plus the reference from each of its clusters.
 
 Note that the Argo CD hostname is **not** an environment value. Each cluster runs its own standalone Argo CD, so two clusters cannot share one URL; `global.domain` is per cluster and appears in the next section.
 

@@ -47,6 +47,16 @@ function read_front_matter_list() {
   ' "${readme}"
 }
 
+# The `.argocd/overlays/shared-patches/<env>` directories a cluster's Argo CD
+# overlay references, one per line. Empty when the overlay references none, or
+# when there is no such overlay.
+function shared_patch_envs_for() {
+  local -r cluster="${1}"
+  local -r kustomization=".argocd/overlays/${cluster}/kustomization.yaml"
+  [ -f "${kustomization}" ] || return 0
+  sed -n 's|.*shared-patches/\([^/]*\)/.*|\1|p' "${kustomization}" | sort -u
+}
+
 # Every tracked YAML a cluster reads: its own directories, the shared files
 # every cluster inherits, and the base and shared patches of the applications
 # this cluster actually runs. An application the cluster does not run is not
@@ -59,15 +69,22 @@ function set_scan_paths_for() {
   local -r cluster="${1}"
   shift
   local -r apps=("${@}")
-  local base app
+  local base app env
   scan_paths=()
   for base in \
     "clusters/${cluster}/" \
     ".argocd/overlays/${cluster}/" \
-    ".argocd/overlays/shared-patches/" \
     "shared-patches/"; do
     scan_paths+=("${base}*.yaml" "${base}*.yml")
   done
+  # only the shared Argo CD patches this cluster's overlay actually reads, for
+  # the same reason applications are scoped: another environment's placeholder
+  # is not this cluster's to fill
+  while IFS= read -r env; do
+    [ -n "${env}" ] || continue
+    scan_paths+=(".argocd/overlays/shared-patches/${env}/*.yaml"
+      ".argocd/overlays/shared-patches/${env}/*.yml")
+  done < <(shared_patch_envs_for "${cluster}")
   for app in "${apps[@]}"; do
     for base in \
       "apps/${app}/base/" \

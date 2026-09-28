@@ -19,14 +19,14 @@ at the end.
 
 ## 1. Prerequisites
 
-| Tool | Version | Why this version |
-| ---- | ------- | ---------------- |
-| k3d | v5.9.0 or later | Current release |
-| Docker or a compatible runtime | any current | k3d runs k3s in containers |
-| kubectl | within one minor of the cluster | |
-| kustomize | 5.8.1 | Same version Argo CD 3.5.3 bundles, so local renders match Argo's |
-| helm | 4.x | Argo CD 3.5.3 bundles 4.2.1; kustomize invokes the local binary |
-| gh (GitHub CLI) | any current | Only for looking up the App installation id |
+| Tool                           | Version                         | Why this version                                                  |
+| ------------------------------ | ------------------------------- | ----------------------------------------------------------------- |
+| k3d                            | v5.9.0 or later                 | Current release                                                   |
+| Docker or a compatible runtime | any current                     | k3d runs k3s in containers                                        |
+| kubectl                        | within one minor of the cluster |                                                                   |
+| kustomize                      | 5.8.1                           | Same version Argo CD 3.5.3 bundles, so local renders match Argo's |
+| helm                           | 4.x                             | Argo CD 3.5.3 bundles 4.2.1; kustomize invokes the local binary   |
+| gh (GitHub CLI)                | any current                     | Only for looking up the App installation id                       |
 
 A GitHub App with Contents: Read-only, installed on the repository (or
 fork) that Argo CD will read from, and its private key on disk. Creating
@@ -90,12 +90,19 @@ git grep -n 'repoURL' -- shared-patches clusters/local
 
 Edit `shared-patches/app.yaml`, `shared-patches/appset.yaml` and
 `clusters/local/root.app.yaml` to `${REPO_URL}` and commit and push to
-`${REPO_BRANCH}`. Then confirm no placeholders remain in the cluster that
-declares itself complete:
+`${REPO_BRANCH}`.
+
+Those three are the whole list: `local` sets its own `global.domain` and runs
+none of the applications that carry AWS placeholders. Now declare the cluster
+finished, by setting `status: complete` in the front matter of
+`clusters/local/README.md`, and confirm nothing is left:
 
 ```sh
 scripts/check-placeholders.sh
 ```
+
+It must print `ok local` and exit 0. The `status: complete` edit stays in your
+fork; the template ships every cluster as `status: template`.
 
 ## 4. Render before applying
 
@@ -206,8 +213,7 @@ kubectl -n argocd get applications \
   -o custom-columns='NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status'
 ```
 
-If any Application sits in `Unknown` with a `ComparisonError`, see section
-10.
+If any Application sits in `Unknown` with a `ComparisonError`, see section 10.
 
 ## 8. Verify each component
 
@@ -296,17 +302,17 @@ Revert the bump afterwards if the fork is to stay on the pinned version.
 
 ## 10. Troubleshooting
 
-| Symptom | Cause | Fix |
-| ------- | ----- | --- |
-| `metadata.annotations: Too long: may not be more than 262144 bytes` on apply | Client-side apply of the ApplicationSet or Application CRD | Use `kubectl apply --server-side --force-conflicts`; for the `argocd` Application, add `ServerSideApply=true` |
-| Application `ComparisonError`: `security: file '...' is not in or below '...'` | Argo CD's kustomize ran without `--load-restrictor LoadRestrictionsNone` | Check `argocd-cm` `kustomize.buildOptions`; the base values set it, so the bootstrap overlay's values did not apply |
-| Application `ComparisonError`: `must specify --enable-helm` | Same, for `--enable-helm` | Same |
-| Application `ComparisonError`: `repository not accessible` or `authentication required` | Credential Secret missing the `argocd.argoproj.io/secret-type` label, URL prefix does not match `repoURL`, or the App is not installed on that repository | `kubectl -n argocd get secret -l argocd.argoproj.io/secret-type`; compare `url` prefix with `repoURL`; check the installation id with `gh api` |
-| `metrics-server` Healthy but `kubectl top nodes` errors with TLS verification | `--kubelet-insecure-tls` not set | It belongs in `apps/metrics-server/overlays/local/metrics-server.helm.values.yaml`; check the rendered Deployment args |
-| Two `metrics-server` deployments in `kube-system` | k3s's bundled one was not disabled | Recreate the cluster with the `--disable=metrics-server@server:*` argument |
-| `o11y` stuck `Progressing`, webhook certificate not Ready | cert-manager not yet Healthy when the operator synced | Waves handle ordering, but a slow image pull can outlast the retry; `argocd app sync o11y` once cert-manager is up |
-| `argocd` Application `OutOfSync` immediately after bootstrap, before any change | The imperative bootstrap and Argo's render differ in label or annotation defaults | Expected once; the first sync reconciles it. Persistent drift means the bootstrap overlay and the Application's `path` differ; both must point at `.argocd/overlays/local` |
-| Helm errors in the repo-server logs mentioning OCI or `--insecure-oci-force-http` | Helm 4 in Argo CD 3.5 changed OCI defaults | Not relevant to the template's HTTPS chart repositories; if a consumer added an OCI repository, see the 3.4-to-3.5 upgrade guide |
+| Symptom                                                                                 | Cause                                                                                                                                                     | Fix                                                                                                                                                                        |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `metadata.annotations: Too long: may not be more than 262144 bytes` on apply            | Client-side apply of the ApplicationSet or Application CRD                                                                                                | Use `kubectl apply --server-side --force-conflicts`; for the `argocd` Application, add `ServerSideApply=true`                                                              |
+| Application `ComparisonError`: `security: file '...' is not in or below '...'`          | Argo CD's kustomize ran without `--load-restrictor LoadRestrictionsNone`                                                                                  | Check `argocd-cm` `kustomize.buildOptions`; the base values set it, so the bootstrap overlay's values did not apply                                                        |
+| Application `ComparisonError`: `must specify --enable-helm`                             | Same, for `--enable-helm`                                                                                                                                 | Same                                                                                                                                                                       |
+| Application `ComparisonError`: `repository not accessible` or `authentication required` | Credential Secret missing the `argocd.argoproj.io/secret-type` label, URL prefix does not match `repoURL`, or the App is not installed on that repository | `kubectl -n argocd get secret -l argocd.argoproj.io/secret-type`; compare `url` prefix with `repoURL`; check the installation id with `gh api`                             |
+| `metrics-server` Healthy but `kubectl top nodes` errors with TLS verification           | `--kubelet-insecure-tls` not set                                                                                                                          | It belongs in `apps/metrics-server/overlays/local/metrics-server.helm.values.yaml`; check the rendered Deployment args                                                     |
+| Two `metrics-server` deployments in `kube-system`                                       | k3s's bundled one was not disabled                                                                                                                        | Recreate the cluster with the `--disable=metrics-server@server:*` argument                                                                                                 |
+| `o11y` stuck `Progressing`, webhook certificate not Ready                               | cert-manager not yet Healthy when the operator synced                                                                                                     | Waves handle ordering, but a slow image pull can outlast the retry; `argocd app sync o11y` once cert-manager is up                                                         |
+| `argocd` Application `OutOfSync` immediately after bootstrap, before any change         | The imperative bootstrap and Argo's render differ in label or annotation defaults                                                                         | Expected once; the first sync reconciles it. Persistent drift means the bootstrap overlay and the Application's `path` differ; both must point at `.argocd/overlays/local` |
+| Helm errors in the repo-server logs mentioning OCI or `--insecure-oci-force-http`       | Helm 4 in Argo CD 3.5 changed OCI defaults                                                                                                                | Not relevant to the template's HTTPS chart repositories; if a consumer added an OCI repository, see the 3.4-to-3.5 upgrade guide                                           |
 
 Repo-server logs are the first place to look for render failures:
 
@@ -330,21 +336,21 @@ git clean -fdX -- '**/charts/'
 
 ## 12. What this runbook does not cover (EKS only)
 
-| Check | Where | Plan reference |
-| ----- | ----- | -------------- |
-| `TargetGroupBinding` objects on `eks.amazonaws.com/v1` register healthy IP targets; target groups tagged `eks:eks-cluster-name` | EKS Auto Mode cluster with an externally owned ALB | WP5 |
-| `ClusterSecretStore` reports `Ready` against Secrets Manager | EKS with node or pod identity permissions | WP3 |
-| `ECRAuthorizationToken` generator produces a token; the OCI repository Secret connects | EKS with ECR access | WP8 (opt-in app) |
-| NetworkPolicy behaviour under enforcement | EKS Auto Mode. The template ships `global.networkPolicy.create: false` (decision 2.1); a consumer who opts in can run a partial check here, since k3s enforces NetworkPolicy via kube-router | WP2 |
+| Check                                                                                                                           | Where                                                                                                                                                                                        | Plan reference   |
+| ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `TargetGroupBinding` objects on `eks.amazonaws.com/v1` register healthy IP targets; target groups tagged `eks:eks-cluster-name` | EKS Auto Mode cluster with an externally owned ALB                                                                                                                                           | WP5              |
+| `ClusterSecretStore` reports `Ready` against Secrets Manager                                                                    | EKS with node or pod identity permissions                                                                                                                                                    | WP3              |
+| `ECRAuthorizationToken` generator produces a token; the OCI repository Secret connects                                          | EKS with ECR access                                                                                                                                                                          | WP8 (opt-in app) |
+| NetworkPolicy behaviour under enforcement                                                                                       | EKS Auto Mode. The template ships `global.networkPolicy.create: false` (decision 2.1); a consumer who opts in can run a partial check here, since k3s enforces NetworkPolicy via kube-router | WP2              |
 
 ## 13. Decisions about this runbook
 
 Settled on 2026-09-18, while the upgrade work this runbook validates was
 being planned.
 
-| Id | Question | Decision |
-| -- | -------- | -------- |
-| R.1 | Script as well as document? | Document now. `scripts/k3d-validate.sh` is written once the manual steps have run twice without edits; the document stays as the explanation |
-| R.2 | Run in CI? | Not on every PR. A `workflow_dispatch` job is added when the script exists; it becomes a required check only if it proves stable. A full bootstrap is ten to fifteen minutes on `ubuntu-latest`, and the GitHub App private key must be a repository secret |
-| R.3 | Fork with GitHub App, or public repository? | Private fork with a GitHub App. It is the only way to validate WP7, and the credential path is the most common bootstrap failure |
-| R.4 | k3s minor | Match the EKS target minor through `K3S_IMAGE`. The point is to catch API removals for that version |
+| Id  | Question                                    | Decision                                                                                                                                                                                                                                                    |
+| --- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R.1 | Script as well as document?                 | Document now. `scripts/k3d-validate.sh` is written once the manual steps have run twice without edits; the document stays as the explanation                                                                                                                |
+| R.2 | Run in CI?                                  | Not on every PR. A `workflow_dispatch` job is added when the script exists; it becomes a required check only if it proves stable. A full bootstrap is ten to fifteen minutes on `ubuntu-latest`, and the GitHub App private key must be a repository secret |
+| R.3 | Fork with GitHub App, or public repository? | Private fork with a GitHub App. It is the only way to validate WP7, and the credential path is the most common bootstrap failure                                                                                                                            |
+| R.4 | k3s minor                                   | Match the EKS target minor through `K3S_IMAGE`. The point is to catch API removals for that version                                                                                                                                                         |

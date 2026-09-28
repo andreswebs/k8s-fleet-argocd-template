@@ -33,24 +33,70 @@ function read_status() {
   ' "${readme}"
 }
 
-# Every tracked YAML a cluster reads: its own directories, plus the shared
-# files each cluster inherits. These are git pathspecs, not shell globs, and
-# git matches `*` across `/`, so `apps/*/base/*.yaml` reaches nested files.
-# Assigns to the caller's `scan_paths` array; `.github/` is deliberately
-# absent, its marker being a workflow note rather than a placeholder.
+# The items of a YAML list in the front matter, one per line.
+function read_front_matter_list() {
+  local -r readme="${1}"
+  local -r key="${2}"
+  awk -v key="${key}:" '
+    NR == 1 && $0 != "---" { exit }
+    NR == 1 { in_front_matter = 1; next }
+    in_front_matter && $0 == "---" { exit }
+    !in_front_matter { next }
+    in_list && $1 == "-" { print $2; next }
+    { in_list = ($1 == key) }
+  ' "${readme}"
+}
+
+# Every tracked YAML a cluster reads: its own directories, the shared files
+# every cluster inherits, and the base and shared patches of the applications
+# this cluster actually runs. An application the cluster does not run is not
+# scanned, because its placeholders are not the cluster's to fill.
+#
+# These are git pathspecs, not shell globs, and git matches `*` across `/`, so
+# `apps/x/base/*.yaml` reaches nested files. `.github/` is deliberately absent,
+# its marker being a workflow note rather than a placeholder.
 function set_scan_paths_for() {
   local -r cluster="${1}"
-  local base
+  shift
+  local -r apps=("${@}")
+  local base app
   scan_paths=()
   for base in \
     "clusters/${cluster}/" \
     ".argocd/overlays/${cluster}/" \
-    "shared-patches/" \
     ".argocd/overlays/shared-patches/" \
-    "apps/*/base/" \
-    "apps/*/shared-patches/" \
-    "apps/*/overlays/${cluster}/"; do
+    "shared-patches/"; do
     scan_paths+=("${base}*.yaml" "${base}*.yml")
+  done
+  for app in "${apps[@]}"; do
+    for base in \
+      "apps/${app}/base/" \
+      "apps/${app}/shared-patches/" \
+      "apps/${app}/overlays/${cluster}/"; do
+      scan_paths+=("${base}*.yaml" "${base}*.yml")
+    done
+  done
+}
+
+# An application with an overlay for this cluster that the cluster does not
+# declare is not scanned, so say so. The declared list is maintained by hand
+# and a stale one would narrow the check silently.
+function warn_undeclared_overlays() {
+  local -r cluster="${1}"
+  shift
+  local -r apps=("${@}")
+  local dir app declared
+  for dir in apps/*/overlays/"${cluster}"; do
+    [ -d "${dir}" ] || continue
+    app="${dir#apps/}"
+    app="${app%%/*}"
+    declared=0
+    for a in "${apps[@]}"; do
+      [ "${a}" = "${app}" ] && declared=1 && break
+    done
+    if [ "${declared}" -eq 0 ]; then
+      echo "note: ${cluster} has an overlay for ${app} but does not list it in its README; not scanned"
+    fi
   done
 }
 
@@ -63,7 +109,7 @@ function main() {
   cd "${REPO_ROOT}"
 
   local complete=()
-  local readme cluster status
+  local readme cluster status app a
   for readme in clusters/*/README.md; do
     [ -f "${readme}" ] || continue
     cluster="$(basename "$(dirname "${readme}")")"
@@ -83,10 +129,19 @@ function main() {
   fi
 
   local failed=0
-  local -a scan_paths
+  local -a scan_paths apps
   local hits status
   for cluster in "${complete[@]}"; do
-    set_scan_paths_for "${cluster}"
+    apps=()
+    while IFS= read -r app; do
+      [ -n "${app}" ] && apps+=("${app}")
+    done < <(read_front_matter_list "clusters/${cluster}/README.md" apps)
+    if [ "${#apps[@]}" -eq 0 ]; then
+      echo_stderr "no apps list in the front matter of clusters/${cluster}/README.md"
+      return 1
+    fi
+    warn_undeclared_overlays "${cluster}" "${apps[@]}"
+    set_scan_paths_for "${cluster}" "${apps[@]}"
     # every complete cluster is reported, so one fix pass can clear them all
     status=0
     hits="$(git grep -n -e "${MARKER}" -- "${scan_paths[@]}")" || status="${?}"

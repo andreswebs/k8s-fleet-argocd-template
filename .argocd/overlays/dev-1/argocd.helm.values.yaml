@@ -1,1 +1,7 @@
 ---
+global:
+  ## the hostname this cluster's Argo CD is served on. per cluster, not per
+  ## environment: each cluster runs its own standalone Argo CD, so two clusters
+  ## cannot share one url. an empty value renders `url: https://%!s(<nil>)`
+  ## into argocd-cm rather than failing.
+  domain: # TODO

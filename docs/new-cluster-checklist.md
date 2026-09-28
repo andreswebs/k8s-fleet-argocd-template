@@ -32,19 +32,11 @@ If you pull Helm charts or container images from a private ECR registry, also fi
 
 An environment here is a group of clusters sharing a set of values, the way `dev-1` and `dev-2` share the `dev` patches.
 
-| File | Field | Value comes from | Caught by |
-| ---- | ----- | ---------------- | --------- |
-| `.argocd/overlays/shared-patches/<env>/argocd.helm.values.yaml` | `global.domain` | The hostname Argo CD is served on for this environment | `scripts/check-placeholders.sh` |
+The shared patch at `.argocd/overlays/shared-patches/<env>/argocd.helm.values.yaml` holds what every cluster in the environment genuinely shares, such as whether `exec.enabled` is on, and carries the commented opt-in for the chart's NetworkPolicy objects. It holds no placeholder today.
 
-`global.domain` is worth filling even before you have a load balancer. Left empty it does not fail: it renders `url: https://%!s(<nil>)` into `argocd-cm`, which Argo CD then uses in generated links. Rendering the overlay and reading `argocd-cm` is the quickest way to confirm you set it:
+Note that the Argo CD hostname is **not** an environment value. Each cluster runs its own standalone Argo CD, so two clusters cannot share one URL; `global.domain` is per cluster and appears in the next section.
 
-```sh
-ARGOCD_OVERLAY=".argocd/overlays/dev-1"
-kustomize build --enable-helm --load-restrictor LoadRestrictionsNone "${ARGOCD_OVERLAY}" \
-  | yq -N 'select(.kind=="ConfigMap" and .metadata.name=="argocd-cm") | .data.url'
-```
-
-You also choose, per environment, the credential type and therefore the `repoURL` form used above.
+You do choose, per environment, the credential type and therefore the `repoURL` form used above.
 
 ## Per cluster
 
@@ -73,7 +65,22 @@ Then edit. Everything below is what actually differs between two clusters in thi
 | `clusters/<cluster-name>/root.app.yaml` | `path` | The name you chose | Nothing, same reason |
 | `clusters/<cluster-name>/README.md` | Title and first sentence | The name you chose | Nothing |
 
-`.argocd/overlays/<cluster-name>/` needs no per-cluster edit at all: the `dev-1` and `dev-2` copies are byte for byte identical. It exists per cluster so that a cluster can pin its own Argo CD chart version and values, which is what makes the staged upgrade in `README.md` possible.
+### The Argo CD hostname
+
+| File | Field | Value comes from | Caught by |
+| ---- | ----- | ---------------- | --------- |
+| `.argocd/overlays/<cluster-name>/argocd.helm.values.yaml` | `global.domain` | The hostname this cluster's Argo CD is served on | `scripts/check-placeholders.sh` |
+
+Worth filling even before you have a load balancer. Left empty it does not fail: it renders `url: https://%!s(<nil>)` into `argocd-cm`, which Argo CD then uses in generated links. Render the overlay and read it back to confirm:
+
+```sh
+CLUSTER_NAME="dev-1"
+kustomize build --enable-helm --load-restrictor LoadRestrictionsNone \
+  ".argocd/overlays/${CLUSTER_NAME}" \
+  | yq -N 'select(.kind=="ConfigMap" and .metadata.name=="argocd-cm") | .data.url'
+```
+
+Apart from that one value, `.argocd/overlays/<cluster-name>/` needs no per-cluster edit: the `dev-1` and `dev-2` copies are otherwise identical. It exists per cluster so that a cluster can also pin its own Argo CD chart version, which is what makes the staged upgrade in `README.md` possible.
 
 ### Values a copy inherits and you must change
 

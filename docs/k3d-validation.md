@@ -274,16 +274,34 @@ GitHub App connectivity (WP7): the Application statuses above already prove
 it, since nothing syncs without a working credential. To see it directly:
 
 ```sh
-kubectl -n argocd port-forward svc/argocd-server 8080:80 &
-argocd login localhost:8080 --plaintext --username admin \
+export ARGOCD_OPTS="--port-forward --port-forward-namespace argocd --plaintext"
+argocd login --username admin \
   --password "$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)"
 argocd repocreds list
 argocd repo list
 ```
 
-The `local` overlay sets `server.insecure`, hence `--plaintext` and port 80.
-Open `http://localhost:8080` in a browser to check the UI loads and the
-Applications tree renders without console errors.
+Let the `argocd` CLI do its own port-forwarding rather than running
+`kubectl port-forward` alongside it. A manual forward here drops the
+connection as soon as the CLI dials it (`lost connection to pod`, then
+`connection refused`), and it binds `[::1]` as well as `127.0.0.1`, so
+`localhost` resolving to IPv6 first is a second way to fail.
+
+The `local` overlay sets `server.insecure`, hence `--plaintext`.
+
+`repocreds list` shows the credentials template. **`repo list` is expected to
+be empty**: this template configures a `repo-creds` template rather than a
+`repository` Secret, so repositories referenced only by Applications are
+never registered and never appear there. The proof that the credential works
+is an Application reaching `Synced` against the private fork, which the
+statuses above already show.
+
+For the UI, run a forward in a separate terminal and open
+`http://localhost:8080`:
+
+```sh
+kubectl -n argocd port-forward svc/argocd-server 8080:80
+```
 
 ## 9. Upgrade Argo CD through Argo CD
 

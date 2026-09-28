@@ -82,12 +82,20 @@ For GitHub Enterprise Server, add `githubAppEnterpriseBaseUrl` with your instanc
 
 ```sh
 argocd repocreds list
-argocd repo list
 ```
 
-`repocreds list` shows the credentials template and the URL prefix it covers. `repo list` shows each repository Argo CD knows and its connection status, which is what actually proves the credential works.
+That lists the credentials template and the URL prefix it covers. Expect one row, with the prefix you set as `url`.
 
-If the connection status is a failure:
+**`argocd repo list` is expected to be empty, and that is not a failure.** It lists repositories registered individually, and this page creates a credentials *template* (`secret-type: repo-creds`) rather than a per-repository entry (`secret-type: repository`). A repository that an Application merely references by `repoURL` is never registered, so it never appears there. Do not read an empty list as a broken credential.
+
+What actually proves the credential works is an Application reaching `Synced` against a **private** repository, since a private repository cannot be cloned without authentication:
+
+```sh
+kubectl --namespace argocd get applications \
+  --output custom-columns='NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status'
+```
+
+If an Application reports `Unknown` with a `ComparisonError`, or stays `OutOfSync` with an authentication message:
 
 - Check the label first. `kubectl --namespace argocd get secret --selector argocd.argoproj.io/secret-type` lists only the Secrets Argo CD can see. If yours is absent, the label is wrong or missing.
 - Then check the installation ID. A connection that fails with an authentication error, while the App ID and key are right, is nearly always an installation ID belonging to a different installation of the App, often one on another organisation or on a personal account. Re-read it with the `gh api` command above, which answers for the specific repository.

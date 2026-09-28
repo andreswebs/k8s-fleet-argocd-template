@@ -44,7 +44,10 @@ export REPO_BRANCH=main
 export GITHUB_APP_ID=
 export GITHUB_APP_INSTALLATION_ID=
 export GITHUB_APP_PRIVATE_KEY_FILE=${HOME}/.secrets/argocd-github-app.pem
-export KUSTOMIZE_FLAGS="--enable-helm --load-restrictor LoadRestrictionsNone"
+## an array, not a string: unquoted ${VAR} word-splits in bash but not in
+## zsh, which is the default shell on macOS. "${ARR[@]}" behaves the same
+## in both. arrays are not exported, so run this runbook in one shell.
+KUSTOMIZE_FLAGS=(--enable-helm --load-restrictor LoadRestrictionsNone)
 ```
 
 Pick `K3S_IMAGE` from the k3s releases (`v1.34.11+k3s1` and `v1.36.4+k3s1`
@@ -116,8 +119,8 @@ scripts/render-all.sh
 Or, for the two kustomizations this runbook applies by hand:
 
 ```sh
-kustomize build ${KUSTOMIZE_FLAGS} .argocd/overlays/local > /dev/null && echo "argocd overlay renders"
-kustomize build ${KUSTOMIZE_FLAGS} clusters/local > /dev/null && echo "cluster overlay renders"
+kustomize build "${KUSTOMIZE_FLAGS[@]}" .argocd/overlays/local > /dev/null && echo "argocd overlay renders"
+kustomize build "${KUSTOMIZE_FLAGS[@]}" clusters/local > /dev/null && echo "cluster overlay renders"
 ```
 
 Pulled charts appear under `.argocd/overlays/local/charts/`; they are
@@ -131,7 +134,7 @@ Prove that the old client-side bootstrap fails on current Argo CD, so the
 server-side flags in the next step are understood rather than cargo-culted:
 
 ```sh
-kustomize build ${KUSTOMIZE_FLAGS} .argocd/overlays/local | kubectl apply --filename - 2>&1 | grep -i 'too long' \
+kustomize build "${KUSTOMIZE_FLAGS[@]}" .argocd/overlays/local | kubectl apply --filename - 2>&1 | grep -i 'too long' \
   && echo "expected: client-side apply rejects the ApplicationSet CRD"
 ```
 
@@ -144,7 +147,7 @@ kubectl delete namespace argocd --ignore-not-found --wait
 ### 5.2 Install
 
 ```sh
-kustomize build ${KUSTOMIZE_FLAGS} .argocd/overlays/local \
+kustomize build "${KUSTOMIZE_FLAGS[@]}" .argocd/overlays/local \
   | kubectl apply --server-side --force-conflicts --filename -
 
 kubectl -n argocd rollout status deployment/argocd-server --timeout=300s
@@ -192,7 +195,7 @@ until then there is nothing to connect to.
 ## 7. Bootstrap the cluster configuration
 
 ```sh
-kustomize build ${KUSTOMIZE_FLAGS} clusters/local \
+kustomize build "${KUSTOMIZE_FLAGS[@]}" clusters/local \
   | kubectl apply --server-side --force-conflicts --filename -
 kubectl apply --server-side --force-conflicts --filename clusters/local/root.app.yaml
 ```

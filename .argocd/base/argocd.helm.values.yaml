@@ -45,7 +45,17 @@ configs:
 
 server:
   name: server
-  replicas: 2
+
+  ## required, not optional: both autoscaling targets below are utilisation
+  ## percentages, and utilisation is a percentage of the request. without
+  ## requests the HPA cannot compute a replica count, reports
+  ## ScalingActive=False, and Argo CD marks this Application Degraded.
+  ## these are the chart's own suggested requests. size them from real figures
+  ## on a cluster that matters.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
 
   autoscaling:
     enabled: true

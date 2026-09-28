@@ -28,6 +28,15 @@ at the end.
 | helm                           | 4.x                             | Argo CD 3.5.3 bundles 4.2.1; kustomize invokes the local binary   |
 | gh (GitHub CLI)                | any current                     | Only for looking up the App installation id                       |
 
+At least **15 GB free** on the filesystem Docker uses. k3d nodes are
+containers, so they share that disk with everything else on the machine, and
+a full bootstrap pulls Argo CD, cert-manager, External Secrets,
+metrics-server and the OpenTelemetry operator. Below roughly 5 GB free the
+kubelet declares `DiskPressure` and evicts the namespace out from under you.
+Check with `docker system df` and reclaim with `docker volume prune` (which
+removes only anonymous volumes; add `-a` to include named project volumes)
+and `docker builder prune`.
+
 A GitHub App with Contents: Read-only, installed on the repository (or
 fork) that Argo CD will read from, and its private key on disk. Creating
 the App is covered in the template's `docs/github-app-credentials.md`
@@ -340,6 +349,7 @@ Revert the bump afterwards if the fork is to stay on the pinned version.
 | `o11y` stuck `Progressing`, webhook certificate not Ready                               | cert-manager not yet Healthy when the operator synced                                                                                                     | Waves handle ordering, but a slow image pull can outlast the retry; `argocd app sync o11y` once cert-manager is up                                                         |
 | `argocd` Application `OutOfSync` immediately after bootstrap, before any change         | The imperative bootstrap and Argo's render differ in label or annotation defaults                                                                         | Expected once; the first sync reconciles it. Persistent drift means the bootstrap overlay and the Application's `path` differ; both must point at `.argocd/overlays/local` |
 | Helm errors in the repo-server logs mentioning OCI or `--insecure-oci-force-http`       | Helm 4 in Argo CD 3.5 changed OCI defaults                                                                                                                | Not relevant to the template's HTTPS chart repositories; if a consumer added an OCI repository, see the 3.4-to-3.5 upgrade guide                                           |
+| Pods `Evicted` or `Pending`, Applications stuck on an old revision | The Docker filesystem filled and the kubelet declared `DiskPressure`, evicting the repo-server so nothing could fetch from git | `kubectl get nodes -o json` and look for `DiskPressure`. Reclaim Docker space, wait about 100s for the condition to clear, then delete the `Evicted` and `ContainerStatusUnknown` pods by hand so the deployments reschedule |
 
 Repo-server logs are the first place to look for render failures:
 

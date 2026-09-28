@@ -1,10 +1,13 @@
 ---
-global:
-  ## k3s enforces NetworkPolicy through kube-router, so uncommenting this is a
-  ## cheap partial check of the chart's policies before a cluster that matters
-  ## opts into them.
-  # networkPolicy:
-  #   create: true
+## k3s enforces NetworkPolicy through kube-router, so uncommenting the whole
+## block below is a cheap partial check of the chart's policies before a
+## cluster that matters opts into them. keep `global` itself commented while it
+## has no live keys: a `global:` with only comments under it parses as null,
+## and helm treats an explicit null as a deletion, which would wipe the entire
+## global block set in the base values.
+# global:
+#   networkPolicy:
+#     create: true
 
 configs:
   cm:

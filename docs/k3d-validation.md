@@ -37,23 +37,29 @@ placeholders and expects Argo CD to read the result.
 Environment used throughout. Set these once:
 
 ```sh
-export CLUSTER_NAME=fleet-local
-export K3S_IMAGE=rancher/k3s:v1.34.11-k3s1   # match the EKS target minor
+export CLUSTER_NAME=local
+export K3S_IMAGE=rancher/k3s:v1.36.4-k3s1   # match the EKS target minor
 export REPO_URL=https://github.com/${GITHUB_ORG}/${GITHUB_REPO}
 export REPO_BRANCH=main
 export GITHUB_APP_ID=
 export GITHUB_APP_INSTALLATION_ID=
-export GITHUB_APP_PRIVATE_KEY_FILE=${HOME}/.secrets/argocd-github-app.pem
+export GITHUB_APP_PRIVATE_KEY_FILE="${HOME}/.secrets.d/argocd-github-app.pem"
 ## an array, not a string: unquoted ${VAR} word-splits in bash but not in
 ## zsh, which is the default shell on macOS. "${ARR[@]}" behaves the same
 ## in both. arrays are not exported, so run this runbook in one shell.
 KUSTOMIZE_FLAGS=(--enable-helm --load-restrictor LoadRestrictionsNone)
 ```
 
-Pick `K3S_IMAGE` from the k3s releases (`v1.34.11+k3s1` and `v1.36.4+k3s1`
-were current on 2026-09-18; the tag replaces `+` with `-`). Matching the
-EKS minor you intend to run makes the CRD and API-version checks
-meaningful.
+Pick `K3S_IMAGE` from the k3s releases (on 2026-09-28 the current patch of
+each supported minor was `v1.33.13+k3s2`, `v1.34.11+k3s1`, `v1.35.8+k3s1`
+and `v1.36.4+k3s1`; the tag replaces `+` with `-`). Matching the EKS minor
+you intend to run makes the CRD and API-version checks meaningful.
+
+Two constraints on that choice. Argo CD 3.5 is tested against Kubernetes
+1.33 to 1.36, and `kubectl` is supported only within one minor of the
+cluster, so a `kubectl` from a much newer Kubernetes will report confusing
+client-side errors against an older k3s. Check with `kubectl version` before
+picking.
 
 ## 2. Create the cluster
 

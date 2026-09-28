@@ -10,7 +10,7 @@ resources:
 helmCharts:
   - name: opentelemetry-operator
     repo: https://open-telemetry.github.io/opentelemetry-helm-charts
-    version: 0.123.0
+    version: 0.123.1
     namespace: o11y
     releaseName: otel-operator
     valuesFile: ../../base/otel-operator.helm.values.yaml

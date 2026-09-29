@@ -9,7 +9,9 @@ metadata:
     ## this a cascading delete of root would uninstall Argo CD with it
     argocd.argoproj.io/sync-options: Delete=false
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+    ## the same foreground cascade as the unqualified name, which
+    ## Kubernetes warns about on every apply because it has no path
+    - resources-finalizer.argocd.argoproj.io/foreground
 spec:
   project: self
   source:

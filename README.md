@@ -160,6 +160,17 @@ kustomize build --load-restrictor LoadRestrictionsNone --enable-helm "${KUSTOMIZ
 kubectl apply --server-side --force-conflicts --filename "${KUSTOMIZATION_DIR}/root.app.yaml"
 ```
 
+A few minutes after this, while Argo CD is installing metrics-server, most
+`kubectl` commands may pause for a while or seem to hang. This is not a broken
+bootstrap. The `v1beta1.metrics.k8s.io` APIService is registered before the
+metrics-server pod behind it is ready, and `kubectl` waits on that unavailable
+aggregated API during discovery. It clears by itself once the pod is up, which
+this shows as `True` under `AVAILABLE`:
+
+```sh
+kubectl get apiservice v1beta1.metrics.k8s.io
+```
+
 ## Validating changes locally
 
 Every overlay in this repository must build with the flags Argo CD renders

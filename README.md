@@ -142,6 +142,11 @@ installed.
 After the `root` Application is installed on the cluster's Argo server, Argo
 will install the full cluster configuration on that cluster.
 
+The `argocd` Application that `root` manages carries
+`argocd.argoproj.io/sync-options: Delete=false`, so deleting `root` leaves Argo
+CD installed. Removing Argo CD from a cluster is therefore two deliberate
+steps: delete `root`, then delete `argocd`.
+
 Applications track `targetRevision: main`, which is hard-coded rather than
 left as a placeholder because most forks keep that branch name. If yours does
 not, [the checklist](docs/new-cluster-checklist.md) names every place to
@@ -173,8 +178,8 @@ cluster sees it.
 
 Before adding a cluster, read
 [the checklist](docs/new-cluster-checklist.md), which lists every value you
-must supply and ends with the same two commands plus
-`scripts/check-placeholders.sh`.
+must supply and ends with the same render plus `scripts/check-placeholders.sh`
+and `scripts/check-cluster-names.sh`, the other two checks CI runs.
 
 ## Authors
 

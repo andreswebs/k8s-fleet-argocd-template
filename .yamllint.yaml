@@ -2,8 +2,13 @@
 extends: default
 
 ignore:
-  - "**/**/charts"
+  ## charts kustomize pulls in, scoped so a chart of your own is still linted
+  - ".argocd/overlays/*/charts/"
+  - "apps/*/overlays/*/charts/"
   - ".render/"
+  ## untracked working directories, as in .markdownlint-cli2.yaml
+  - ".tickets/"
+  - ".local/"
 
 rules:
   document-start: enable

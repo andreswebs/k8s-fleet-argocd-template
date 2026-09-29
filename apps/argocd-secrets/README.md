@@ -24,7 +24,7 @@ Both are refreshed every 30 minutes from a single `ECRAuthorizationToken` genera
 
    Wave 2 places it after `external-secrets` and the secret stores it depends on.
 
-2. Add `argocd-secrets` to the `apps` list in `clusters/<cluster-name>/README.md`, which mirrors that generator list.
+2. Move `argocd-secrets` from the `disabled` list to the `apps` list in `clusters/<cluster-name>/README.md`, which mirrors that generator list.
 
 3. Fill the four placeholders listed below.
 

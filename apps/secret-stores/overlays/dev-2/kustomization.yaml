@@ -12,3 +12,10 @@ patches:
       group: external-secrets.io
       version: v1
       name: aws-secrets-manager
+
+  - path: patches/parameter-store.clustersecretstore.yaml
+    target:
+      kind: ClusterSecretStore
+      group: external-secrets.io
+      version: v1
+      name: aws-parameter-store

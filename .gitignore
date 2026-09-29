@@ -3,5 +3,9 @@
 
 *.bak
 *.bak.*
-**/charts/
+# kustomize writes the charts it pulls next to each kustomization that
+# references one. scoped to those places, so a chart of your own under
+# charts/ elsewhere stays tracked
+.argocd/overlays/*/charts/
+apps/*/overlays/*/charts/
 .render/

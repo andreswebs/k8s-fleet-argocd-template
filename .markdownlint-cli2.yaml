@@ -3,8 +3,10 @@
 ## than depending on a configuration file in the runner's home directory.
 ignores:
   ## Helm charts kustomize pulls in bring their own documentation. It is
-  ## vendored, gitignored and not ours to fix.
-  - "**/charts/**"
+  ## vendored, gitignored and not ours to fix. Scoped to where kustomize writes
+  ## them, so a chart of your own is still linted.
+  - ".argocd/overlays/*/charts/**"
+  - "apps/*/overlays/*/charts/**"
   ## Untracked working directories that happen to hold markdown. The ticket
   ## store in particular must never be reached by a formatter.
   - ".tickets/**"

@@ -66,6 +66,11 @@ jobs:
       - name: Check that complete clusters carry no placeholder
         run: scripts/check-placeholders.sh
 
+      - name: Check that every cluster names itself
+        ## runs even when the placeholder check fails, so one push reports both
+        if: success() || failure()
+        run: scripts/check-cluster-names.sh
+
   render:
     name: Render
     runs-on: ubuntu-latest

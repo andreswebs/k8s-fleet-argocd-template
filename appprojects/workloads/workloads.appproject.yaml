@@ -5,6 +5,10 @@ metadata:
   name: workloads
   namespace: argocd
   finalizers:
+    ## unqualified on purpose, unlike the Applications' /foreground form. Argo
+    ## CD removes only this exact name from an AppProject, so any other would
+    ## leave the project undeletable. Kubernetes warns about it on apply; the
+    ## warning is harmless and lasts until Argo CD accepts a qualified name
     - resources-finalizer.argocd.argoproj.io
 spec:
   description: Workload components

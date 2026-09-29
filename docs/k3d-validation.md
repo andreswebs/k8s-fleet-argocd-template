@@ -50,6 +50,7 @@ export CLUSTER_NAME=local
 export K3S_IMAGE=rancher/k3s:v1.36.4-k3s1   # match the EKS target minor
 export REPO_URL=https://github.com/${GITHUB_ORG}/${GITHUB_REPO}
 export REPO_BRANCH=main
+export GITHUB_APP_SLUG=
 export GITHUB_APP_ID=
 export GITHUB_APP_INSTALLATION_ID=
 export GITHUB_APP_PRIVATE_KEY_FILE="${HOME}/.secrets.d/argocd-github-app.pem"
@@ -207,11 +208,17 @@ kubectl -n argocd create secret generic github-app-repo-creds \
   | kubectl apply --filename -
 ```
 
-If you do not know the installation id:
+If you do not know the installation id, list the organisation's
+installations as an organisation owner. The slug is the App's name as it
+appears in its URL:
 
 ```sh
-gh api "/repos/${GITHUB_ORG}/${GITHUB_REPO}/installation" --jq .id
+gh api "/orgs/${GITHUB_ORG}/installations" \
+  --jq ".installations[] | select(.app_slug == \"${GITHUB_APP_SLUG}\") | {id, app_id, repository_selection, permissions}"
 ```
+
+For an App installed on a personal account, use `/user/installations` in
+place of `/orgs/${GITHUB_ORG}/installations`.
 
 Verify from inside Argo CD once the root Application exists (section 7);
 until then there is nothing to connect to.

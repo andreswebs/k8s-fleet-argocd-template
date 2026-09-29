@@ -63,6 +63,10 @@ On `Resource: "*"`, used when an `ExternalSecret` finds parameters with `dataFro
 - `ssm:DescribeParameters`
 - `tag:GetResources`
 
+### Permissions for ECR, if `argocd-secrets` is enabled
+
+The optional `argocd-secrets` application mints ECR tokens as the same controller, so it adds ECR permissions to this role. [`apps/argocd-secrets/README.md`](../argocd-secrets/README.md) lists them.
+
 ### Decrypting with a customer-managed KMS key
 
 A secret, or a `SecureString` parameter, encrypted with the AWS-managed key needs nothing further. One encrypted with a customer-managed key also needs `kms:Decrypt` on that key, granted in the role's policy and allowed by the key policy.

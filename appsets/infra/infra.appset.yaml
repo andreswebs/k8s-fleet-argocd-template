@@ -11,7 +11,9 @@ spec:
     metadata:
       name: "{{.name}}"
       finalizers:
-        - resources-finalizer.argocd.argoproj.io
+        ## the same foreground cascade as the unqualified name, which
+        ## Kubernetes warns about on every apply because it has no path
+        - resources-finalizer.argocd.argoproj.io/foreground
       annotations:
         argocd.argoproj.io/sync-wave: '{{ dig "wave" "100" . }}'
     spec:

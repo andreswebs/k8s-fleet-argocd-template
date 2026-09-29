@@ -2,7 +2,7 @@
 
 Argo CD needs read access to the repository holding this configuration. A GitHub App is the credential to prefer over a deploy key: it is scoped to chosen repositories rather than one, its tokens are short-lived and minted on demand, and it survives the person who created it leaving the organisation.
 
-This page covers creating the App, finding the two identifiers Argo CD needs, and building the Secret. The Secret itself is created outside this repository, normally by the infrastructure-as-code that creates the cluster, at the moment of cluster creation. Nothing in this repository creates it and no private key belongs in Git.
+This page covers creating the App, finding the two identifiers Argo CD needs, building the Secret, and where the credential lives and how it rotates afterwards. The Secret itself is created outside this repository, normally by the infrastructure-as-code that creates the cluster, at the moment of cluster creation. Nothing in this repository creates it and no private key belongs in Git.
 
 ## Before you start
 
@@ -19,6 +19,8 @@ This page covers creating the App, finding the two identifiers Argo CD needs, an
 5. Choose whether the App may be installed only in this organisation or in any account. Only this organisation is the right answer for a fleet.
 6. Create the App. The App ID is on the resulting settings page, near the top, a six-digit number. Keep it.
 
+Argo CD uses exactly three values from the App: the App ID, the installation ID and the private key. The settings page also shows a client ID and offers to generate a client secret. Those are for signing users in through the App with OAuth, and Argo CD never uses them. Do not generate a client secret for this App: an unused secret is only one more thing to protect, rotate and leak.
+
 ## 2. Install it and find the installation ID
 
 An App that exists but is not installed grants nothing. Install it, then record the installation ID, which is a different number from the App ID and is the value most often got wrong.
@@ -30,21 +32,25 @@ An App that exists but is not installed grants nothing. Install it, then record 
    https://github.com/organizations/<org>/settings/installations/<installation-id>
    ```
 
-Or ask the API, which is less error-prone:
+Or ask the API, which is less error-prone. As an organisation owner, list the organisation's installations and pick out this App's by its slug, the App's name as it appears in its URL:
 
 ```sh
-gh api "/repos/${GITHUB_ORG}/${GITHUB_REPO}/installation" --jq .id
+GITHUB_APP_SLUG="my-fleet-app"
+gh api "/orgs/${GITHUB_ORG}/installations" \
+  --jq ".installations[] | select(.app_slug == \"${GITHUB_APP_SLUG}\") | {id, app_id, repository_selection, permissions}"
 ```
 
-That endpoint answers for the repository you name, so it returns the installation that actually governs the repository Argo CD will read. This is exactly the check to run when Argo CD reports a repository as inaccessible.
+That returns the installation ID together with the App ID and the permissions the installation was granted, so one call checks all three. For an App installed on a personal account, use `/user/installations` in place of `/orgs/${GITHUB_ORG}/installations`.
+
+Do not reach for `/repos/${GITHUB_ORG}/${GITHUB_REPO}/installation`, although it looks like the direct answer. That endpoint authenticates as the App itself, with a JSON web token signed by the App's private key, and your own `gh` token gets HTTP 401, "A JSON web token could not be decoded".
 
 ## 3. Generate the private key
 
 On the App's settings page, under Private keys, choose Generate a private key. The browser downloads a `.pem` file, and GitHub shows it to you once.
 
-GitHub issues this key in PEM format, with a `-----BEGIN RSA PRIVATE KEY-----` header. Argo CD accepts that form unchanged: do not convert it, and do not strip the header, the footer or the trailing newline.
+GitHub issues this key as a PKCS#1 PEM file, with a `-----BEGIN RSA PRIVATE KEY-----` header. Argo CD accepts that form unchanged: do not convert it, and do not strip the header, the footer or the trailing newline.
 
-Treat the file as a secret. It belongs in whatever your infrastructure-as-code uses for secret material, never in this repository.
+Treat the file as a secret. It belongs in whatever your infrastructure-as-code uses for secret material, never in this repository. Once it is stored there, delete the download; [Storing and rotating the credential](#6-storing-and-rotating-the-credential) says where it should live.
 
 ## 4. Create the Secret
 
@@ -76,6 +82,8 @@ kubectl --namespace argocd create secret generic github-app-repo-creds \
   | kubectl apply --server-side --force-conflicts --filename -
 ```
 
+The key goes in with `--from-file`, not `--from-literal`, even though every other value uses the latter. A literal is an argument on the command line, so the key would appear in the process list and in shell history; a file path shows only the path. Keep it that way when adapting the command for your own pipeline.
+
 For GitHub Enterprise Server, add `githubAppEnterpriseBaseUrl` with your instance's API base URL, and use your instance's host in `url`.
 
 ## 5. Verify
@@ -98,5 +106,47 @@ kubectl --namespace argocd get applications \
 If an Application reports `Unknown` with a `ComparisonError`, or stays `OutOfSync` with an authentication message:
 
 - Check the label first. `kubectl --namespace argocd get secret --selector argocd.argoproj.io/secret-type` lists only the Secrets Argo CD can see. If yours is absent, the label is wrong or missing.
-- Then check the installation ID. A connection that fails with an authentication error, while the App ID and key are right, is nearly always an installation ID belonging to a different installation of the App, often one on another organisation or on a personal account. Re-read it with the `gh api` command above, which answers for the specific repository.
+- Then check the installation ID. A connection that fails with an authentication error, while the App ID and key are right, is nearly always an installation ID belonging to a different installation of the App, often one on another organisation or on a personal account. Re-read it with the `gh api` command above and compare the `id` it returns with the one in the Secret. That command lists the installation, not the repositories it covers: if `repository_selection` is `selected`, confirm on the installation's settings page that the repository Argo CD reads is among them, since listing them from a shell needs a token issued to the App rather than to you.
 - Then check the URL form. An SSH URL with GitHub App credentials cannot work, and a prefix that does not match the Applications' `repoURL` matches nothing.
+
+## 6. Storing and rotating the credential
+
+Creating the Secret is a one-off step, but the credential behind it outlives the bootstrap. Three things are worth settling before the first cluster, because they apply to every cluster after it.
+
+### One stored copy for the fleet
+
+One App serves every cluster, so there is one private key, and it wants one source of truth. Keep it in a secrets manager, typically in a central account that the cluster pipelines can read, and build each cluster's `repo-creds` Secret from that copy. Avoid a copy inside each cluster's infrastructure-as-code: every copy is one more place to update on rotation and one more place to leak from.
+
+Store the App ID and the installation ID beside the key. They are not secret, but the Secret needs all three, and keeping them together means one lookup builds it.
+
+Once the key is stored, delete the downloaded `.pem`.
+
+### Why External Secrets cannot deliver it on day 0
+
+This template installs External Secrets, so an `ExternalSecret` looks like the natural way to create `repo-creds`. It cannot be the first one. Argo CD needs the credential to read the repository that installs External Secrets, so the first `repo-creds` Secret has to exist before the bootstrap, or be created as part of it, as section 4 does.
+
+After the bootstrap there are two options:
+
+- Keep creating the Secret from the pipeline, as at bootstrap. Rotation then means re-running that step on each cluster.
+- Let an `ExternalSecret` take the Secret over, reading from the same central store. Rotation then propagates by itself on the next refresh. The `ExternalSecret` must produce the same name, keys and `argocd.argoproj.io/secret-type: repo-creds` label as the Secret it replaces.
+
+Either way, the pipeline keeps the ability to create the Secret from scratch, since a new cluster starts without External Secrets.
+
+### Rotating the key without downtime
+
+A GitHub App can hold up to 25 private keys at once, and every one of them is valid until it is deleted. That is what makes rotation safe: the new key works before the old one stops working. See [Managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps).
+
+1. On the App's settings page, generate a new private key.
+2. Replace the key in the stored copy with the new one.
+3. Re-apply the `repo-creds` Secret on every cluster, with the same pipeline as section 4, or wait for the `ExternalSecret` to refresh if one owns it. `kubectl apply --server-side --force-conflicts` updates the existing Secret in place.
+4. On every cluster, confirm that the Applications still reach `Synced`, as in section 5. Force a refresh first if you do not want to wait for the next poll:
+
+   ```sh
+   APP_NAME="root"
+   kubectl --namespace argocd annotate application "${APP_NAME}" \
+     argocd.argoproj.io/refresh=hard --overwrite
+   ```
+
+5. Only then delete the old key on the App's settings page, and delete the new key's download.
+
+Deleting the old key before every cluster has the new one is the one way to turn a rotation into an outage.

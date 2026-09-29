@@ -1,2 +1,4 @@
 ---
-# args: [--kubelet-insecure-tls] ## use this if using kind
+## kind or k3d only, whose kubelets serve a self-signed certificate. a real
+## cluster must not skip kubelet certificate verification
+# args: [--kubelet-insecure-tls]

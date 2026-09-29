@@ -8,6 +8,10 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   description: Workload components
+  ## left open because workloads commonly live in their own repositories. it
+  ## can be narrowed the same way as the other projects; the Helm charts an
+  ## overlay inflates with kustomize need no entry, since sourceRepos governs
+  ## only an Application's own source.
   sourceRepos:
     - "*"
   destinations:

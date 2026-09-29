@@ -32,7 +32,7 @@ The `k8s-fleet` repository manages configurations for a fleet of Kubernetes clus
 ### Render a specific kustomization (overlay)
 
 ```sh
-KUSTOMIZATION_DIR="overlays/<cluster-name>" # <-- this is must be set to the relative path to the overlay to render
+KUSTOMIZATION_DIR="overlays/<cluster-name>" # <-- this must be set to the relative path to the overlay to render
 ## example:
 # KUSTOMIZATION_DIR=".argocd/overlays/dev-1"
 ```
@@ -55,7 +55,15 @@ This is the gate CI runs: it builds every kustomization under `.argocd/overlays`
 scripts/check-placeholders.sh
 ```
 
-Fails when a cluster whose `clusters/<cluster-name>/README.md` front matter says `status: complete` still has a `TODO` in its own files or in the shared files it inherits. The template's own clusters ship as `status: template` and are skipped.
+Fails when a cluster whose `clusters/<cluster-name>/README.md` front matter says `status: complete` still has a `TODO` in its own files or in the shared files it inherits. The template's own clusters ship as `status: template` and are skipped. An application with an overlay for the cluster is scanned only if it is in the README's `apps` list; one kept for later goes in the `disabled` list, which silences the note an unlisted overlay otherwise gets.
+
+### Check that every cluster names itself
+
+```sh
+scripts/check-cluster-names.sh
+```
+
+Fails when a cluster's `patches/infra.appset.yaml`, `patches/argocd.app.yaml` or `root.app.yaml` names a cluster other than its own directory. A cluster copied from another and left with the source's name renders cleanly, so this is the only check that sees it.
 
 ### Accessing Argo CD UI
 

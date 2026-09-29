@@ -58,7 +58,7 @@ function shared_patch_envs_for() {
 }
 
 # Every tracked YAML a cluster reads: its own directories, the shared files
-# every cluster inherits, and the base and shared patches of the applications
+# and AppProjects every cluster inherits, and the base and shared patches of the applications
 # this cluster actually runs. An application the cluster does not run is not
 # scanned, because its placeholders are not the cluster's to fill.
 #
@@ -74,7 +74,8 @@ function set_scan_paths_for() {
   for base in \
     "clusters/${cluster}/" \
     ".argocd/overlays/${cluster}/" \
-    "shared-patches/"; do
+    "shared-patches/" \
+    "appprojects/"; do
     scan_paths+=("${base}*.yaml" "${base}*.yml")
   done
   # only the shared Argo CD patches this cluster's overlay actually reads, for
@@ -95,9 +96,9 @@ function set_scan_paths_for() {
   done
 }
 
-# An application with an overlay for this cluster that the cluster does not
-# declare is not scanned, so say so. The declared list is maintained by hand
-# and a stale one would narrow the check silently.
+# An application with an overlay for this cluster that the cluster neither
+# runs nor lists as disabled is not scanned, so say so. The lists are
+# maintained by hand and a stale one would narrow the check silently.
 function warn_undeclared_overlays() {
   local -r cluster="${1}"
   shift
@@ -112,7 +113,7 @@ function warn_undeclared_overlays() {
       [ "${a}" = "${app}" ] && declared=1 && break
     done
     if [ "${declared}" -eq 0 ]; then
-      echo "note: ${cluster} has an overlay for ${app} but does not list it in its README; not scanned"
+      echo "note: ${cluster} has an overlay for ${app} but lists it under neither apps nor disabled in its README; not scanned"
     fi
   done
 }
@@ -146,7 +147,7 @@ function main() {
   fi
 
   local failed=0
-  local -a scan_paths apps
+  local -a scan_paths apps known
   local hits status
   for cluster in "${complete[@]}"; do
     apps=()
@@ -157,7 +158,13 @@ function main() {
       echo_stderr "no apps list in the front matter of clusters/${cluster}/README.md"
       return 1
     fi
-    warn_undeclared_overlays "${cluster}" "${apps[@]}"
+    # an overlay kept for later, such as an optional application, is named
+    # under `disabled` so that it is neither scanned nor noted
+    known=("${apps[@]}")
+    while IFS= read -r app; do
+      [ -n "${app}" ] && known+=("${app}")
+    done < <(read_front_matter_list "clusters/${cluster}/README.md" disabled)
+    warn_undeclared_overlays "${cluster}" "${known[@]}"
     set_scan_paths_for "${cluster}" "${apps[@]}"
     # every complete cluster is reported, so one fix pass can clear them all
     status=0

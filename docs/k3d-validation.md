@@ -107,10 +107,19 @@ git grep -n 'repoURL' -- shared-patches clusters/local
 ```
 
 Edit `shared-patches/app.yaml`, `shared-patches/appset.yaml` and
-`clusters/local/root.app.yaml` to `${REPO_URL}` and commit and push to
-`${REPO_BRANCH}`.
+`clusters/local/root.app.yaml` to `${REPO_URL}`.
 
-Those three are the whole list: `local` sets its own `global.domain` and runs
+Then narrow the AppProjects that take their source from the fork. Set the
+`sourceRepos` entry marked `TODO` in `appprojects/infra/infra.appproject.yaml`,
+`appprojects/root/root.appproject.yaml` and
+`appprojects/self/self.appproject.yaml` to the same `${REPO_URL}`, and drop the
+marker, then commit and push to `${REPO_BRANCH}`:
+
+```sh
+git grep -n 'TODO' -- appprojects
+```
+
+Those six are the whole list: `local` sets its own `global.domain` and runs
 none of the applications that carry AWS placeholders. Now declare the cluster
 finished, by setting `status: complete` in the front matter of
 `clusters/local/README.md`, and confirm nothing is left:

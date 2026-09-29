@@ -4,6 +4,10 @@ kind: Application
 metadata:
   name: argocd
   namespace: argocd
+  annotations:
+    ## root manages this Application and deletes what it manages, so without
+    ## this a cascading delete of root would uninstall Argo CD with it
+    argocd.argoproj.io/sync-options: Delete=false
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

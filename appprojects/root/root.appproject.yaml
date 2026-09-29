@@ -8,8 +8,14 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   description: Root
+  ## every Application in this project takes its source from this repository,
+  ## so this can be narrowed to your fork's URL, the same value as `repoURL`.
+  ## the Helm charts the overlays inflate need no entry here: kustomize pulls
+  ## them inside the repo-server, and sourceRepos governs only an Application's
+  ## own source. list a chart repository only for an Application whose source
+  ## is that repository itself.
   sourceRepos:
-    - "*"
+    - "*" # TODO
   destinations:
     - namespace: "*"
       server: https://kubernetes.default.svc
